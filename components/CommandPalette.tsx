@@ -43,12 +43,12 @@ export function CommandPalette({
     };
     const nav: Item[] = [
       { id: "n-home", label: "Voltar ao quarto", hint: "Esc", group: "Navegação", run: go("/") },
-      { id: "n-dash", label: "Abrir dashboard", hint: "G D", group: "Navegação", run: go("/dashboard") },
-      { id: "n-tar", label: "Abrir tarefas", hint: "G T", group: "Navegação", run: go("/tarefas") },
-      { id: "n-cal", label: "Abrir calendário", hint: "G C", group: "Navegação", run: go("/calendario") },
-      { id: "n-dis", label: "Abrir estante de disciplinas", hint: "G E", group: "Navegação", run: go("/disciplinas") },
-      { id: "n-rad", label: "Abrir rádio", hint: "G R", group: "Navegação", run: go("/radio") },
-      { id: "n-est", label: "Abrir estatísticas", hint: "G S", group: "Navegação", run: go("/estatisticas") },
+      { id: "n-dash", label: "Abrir dashboard", hint: "G D", group: "Navegação", run: go("/?open=dashboard") },
+      { id: "n-tar", label: "Abrir tarefas", hint: "G T", group: "Navegação", run: go("/?open=tarefas") },
+      { id: "n-cal", label: "Abrir calendário", hint: "G C", group: "Navegação", run: go("/?open=calendario") },
+      { id: "n-dis", label: "Abrir estante de disciplinas", hint: "G E", group: "Navegação", run: go("/?open=disciplinas") },
+      { id: "n-rad", label: "Abrir rádio", hint: "G R", group: "Navegação", run: go("/?open=radio") },
+      { id: "n-est", label: "Abrir estatísticas", hint: "G S", group: "Navegação", run: go("/?open=estatisticas") },
       { id: "n-foco", label: "Iniciar sessão de foco", hint: "F", group: "Navegação", run: go("/foco") },
       { id: "n-ajustes", label: "Abrir ajustes", hint: "tema · perfil", group: "Navegação", run: go("/ajustes") },
       { id: "n-proc", label: "Ver processo de design", hint: "Etapa 1", group: "Navegação", run: go("/processo") },
@@ -58,7 +58,7 @@ export function CommandPalette({
       label: s.name,
       hint: s.code,
       group: "Disciplinas",
-      run: go(`/disciplinas/${s.id}`),
+      run: go(`/?open=disciplinas&id=${s.id}`),
     }));
     const taskItems: Item[] = tasks
       .filter((t) => !t.done)
@@ -68,7 +68,7 @@ export function CommandPalette({
         label: t.title,
         hint: t.due ? relativeDay(t.due) : undefined,
         group: "Tarefas",
-        run: go("/tarefas"),
+        run: go("/?open=tarefas"),
       }));
     return [...nav, ...subItems, ...taskItems];
   }, [subjects, tasks, router, onClose]);

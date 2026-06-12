@@ -1,18 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import { use, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { TaskRow } from "@/components/TaskRow";
 import { useMounted } from "@/components/useMounted";
 import { fmtShort, relativeDay, todayIso, WEEKDAYS_LONG } from "@/lib/dates";
 import { gradeOutlook, useNook } from "@/lib/store";
 
-export default function DisciplinaPage({
-  params,
-}: {
-  params: Promise<{ id: string }>;
-}) {
-  const { id } = use(params);
+/** Detalhe de uma disciplina — usado dentro da estante (overlay do quarto). */
+export function DisciplinaDetail({ id }: { id: string }) {
   const mounted = useMounted();
   const subjects = useNook((s) => s.subjects);
   const tasks = useNook((s) => s.tasks);
@@ -43,7 +39,7 @@ export default function DisciplinaPage({
       <div className="py-20 text-center">
         <p className="mb-2 text-3xl">📚</p>
         <p className="text-ink-mid">Essa disciplina não está na estante.</p>
-        <Link href="/disciplinas" className="mt-3 inline-block text-sm text-amber">
+        <Link href="/?open=disciplinas" className="mt-3 inline-block text-sm text-amber">
           ← voltar à estante
         </Link>
       </div>
@@ -56,6 +52,13 @@ export default function DisciplinaPage({
 
   return (
     <div className="mx-auto max-w-[900px]">
+      <Link
+        href="/?open=disciplinas"
+        className="nk-reveal mb-4 inline-flex items-center gap-1.5 text-sm text-ink-mid transition-colors hover:text-amber"
+      >
+        <span aria-hidden>←</span> estante
+      </Link>
+
       {/* cabeçalho */}
       <header
         className="nk-reveal mb-6 rounded-(--radius-lg) p-6"

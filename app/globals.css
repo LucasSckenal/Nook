@@ -207,6 +207,82 @@ body::after {
   animation: nk-led 2.4s ease-in-out infinite;
 }
 
+/* moldura de objeto clicável — só acende quando a "lanterna" (cursor) se
+   aproxima. Por padrão fica invisível: a tela respira (Ma). A intensidade
+   vem de --lit (proximidade, setada via JS); o hover leva a 1. */
+@keyframes nk-glow-breathe {
+  0%,
+  100% {
+    opacity: 0.45;
+  }
+  50% {
+    opacity: 0.7;
+  }
+}
+/* a luz sai do próprio objeto: brilho radial macio, na cor dele */
+.nk-frame {
+  position: absolute;
+  inset: -14px;
+  border-radius: 26px;
+  background: radial-gradient(
+    ellipse 68% 68% at center,
+    color-mix(in srgb, var(--c, #e8a87c) 60%, transparent) 0%,
+    color-mix(in srgb, var(--c, #e8a87c) 22%, transparent) 42%,
+    transparent 70%
+  );
+  pointer-events: none;
+  animation: nk-glow-breathe 3.8s ease-in-out infinite;
+}
+/* contorno fino só no hover, para confirmar o alvo */
+.nk-frame::after {
+  content: "";
+  position: absolute;
+  inset: 11px;
+  border-radius: 16px;
+  border: 2px solid color-mix(in srgb, var(--c, #e8a87c) 80%, transparent);
+  opacity: 0;
+  transition: opacity 200ms var(--nk-ease-ui);
+}
+.nk-hotspot:hover .nk-frame,
+.nk-hotspot:focus-visible .nk-frame {
+  animation: none;
+  opacity: 0.85;
+}
+.nk-hotspot:hover .nk-frame::after,
+.nk-hotspot:focus-visible .nk-frame::after {
+  opacity: 1;
+}
+
+/* farol do hotspot: avisa que o objeto é clicável, sem gritar */
+@keyframes nk-beacon-core {
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 0.85;
+  }
+  50% {
+    transform: scale(1.18);
+    opacity: 1;
+  }
+}
+@keyframes nk-beacon-ring {
+  0% {
+    transform: scale(0.5);
+    opacity: 0.5;
+  }
+  70%,
+  100% {
+    transform: scale(2.3);
+    opacity: 0;
+  }
+}
+.nk-beacon-core {
+  animation: nk-beacon-core 2.8s ease-in-out infinite;
+}
+.nk-beacon-ring {
+  animation: nk-beacon-ring 2.8s ease-out infinite;
+}
+
 /* skeleton shimmer âmbar 8% */
 @keyframes nk-shimmer {
   0% {
@@ -280,7 +356,10 @@ body::after {
   .nk-rain-layer,
   .nk-steam,
   .nk-cat,
-  .nk-led-on {
+  .nk-led-on,
+  .nk-beacon-ring,
+  .nk-beacon-core,
+  .nk-frame {
     animation: none !important;
   }
   * {
@@ -293,7 +372,10 @@ body::after {
 body.nk-calm .nk-rain-layer,
 body.nk-calm .nk-steam,
 body.nk-calm .nk-cat,
-body.nk-calm .nk-led-on {
+body.nk-calm .nk-led-on,
+body.nk-calm .nk-beacon-ring,
+body.nk-calm .nk-beacon-core,
+body.nk-calm .nk-frame {
   animation: none !important;
 }
 

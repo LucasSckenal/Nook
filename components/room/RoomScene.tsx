@@ -1,33 +1,26 @@
 "use client";
 
-import { useMemo, useRef, useState } from "react";
+import { useMemo, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useNook } from "@/lib/store";
 import { daysBetween, relativeDay, todayIso } from "@/lib/dates";
+import type { ModuleKey } from "./ModuleOverlay";
 
 /**
  * O Quarto — hub espacial do Nook.
- * Cena 2.5D em SVG com 3 planos de parallax, hotspots navegáveis,
- * zoom de câmera (600ms, ease-room), ciclo dia/noite pela hora real,
- * chuva opcional na janela e estados ambientais (post-it, vapor, LED).
+ * Cena 2.5D em SVG com 3 planos de parallax. Cada objeto é um hotspot:
+ * ao tocá-lo, o módulo nasce do próprio objeto (morph + blur), gerido pelo
+ * RoomShell. Ciclo dia/noite pela hora real, chuva e estados ambientais.
  */
 
-interface Hotspot {
-  id: string;
-  label: string;
-  href?: string;
-  cx: number; // centro para o zoom da câmera
-  cy: number;
-}
-
-const HOTSPOTS: Record<string, Hotspot> = {
-  computador: { id: "computador", label: "Computador · Dashboard e Estuda", href: "/dashboard", cx: 810, cy: 510 },
-  caderno: { id: "caderno", label: "Caderno · Tarefas", href: "/tarefas", cx: 555, cy: 625 },
-  calendario: { id: "calendario", label: "Calendário · Agenda", href: "/calendario", cx: 605, cy: 255 },
-  estante: { id: "estante", label: "Estante · Disciplinas", href: "/disciplinas", cx: 1365, cy: 350 },
-  radio: { id: "radio", label: "Rádio · Sons do quarto", href: "/radio", cx: 1095, cy: 590 },
-  caneca: { id: "caneca", label: "Caneca · Estatísticas", href: "/estatisticas", cx: 985, cy: 600 },
-  luminaria: { id: "luminaria", label: "Luminária · Modo foco", href: "/foco", cx: 280, cy: 560 },
+/** ponto da cena (viewBox 1600×1000) para onde a câmera mergulha por módulo */
+const ZOOM_POINT: Record<ModuleKey, { cx: number; cy: number }> = {
+  dashboard: { cx: 812, cy: 520 },
+  tarefas: { cx: 555, cy: 625 },
+  calendario: { cx: 605, cy: 255 },
+  disciplinas: { cx: 1365, cy: 350 },
+  radio: { cx: 1105, cy: 595 },
+  estatisticas: { cx: 985, cy: 600 },
 };
 
 type Phase = "noite" | "manhã" | "tarde" | "entardecer";
@@ -46,7 +39,14 @@ const SKY: Record<Phase, { top: string; bottom: string; stars: boolean }> = {
   entardecer: { top: "#3d3a5c", bottom: "#c97b63", stars: false },
 };
 
-export function RoomScene() {
+export function RoomScene({
+  onOpen,
+  zoomTarget,
+}: {
+  onOpen: (key: ModuleKey, origin: { x: number; y: number }) => void;
+  /** módulo aberto: a câmera mergulha em direção ao objeto e fica lá */
+  zoomTarget?: ModuleKey | null;
+}) {
   const router = useRouter();
   const subjects = useNook((s) => s.subjects);
   const sessions = useNook((s) => s.sessions);
@@ -55,7 +55,6 @@ export function RoomScene() {
   const setRainVisual = useNook((s) => s.setRainVisual);
   const radioPlaying = useNook((s) => s.radio.playing);
 
-  const [zoom, setZoom] = useState<Hotspot | null>(null);
   const bgRef = useRef<SVGGElement>(null);
   const midRef = useRef<SVGGElement>(null);
   const frontRef = useRef<SVGGElement>(null);
@@ -86,13 +85,17 @@ export function RoomScene() {
     [tasks]
   );
 
-  function go(h: Hotspot) {
-    if (!h.href) return;
-    setZoom(h);
-    window.setTimeout(() => router.push(h.href!), 560);
+  /** abre o módulo a partir do ponto do objeto clicado (origem do morph) */
+  function openMod(e: React.SyntheticEvent, key: ModuleKey) {
+    const r = (e.currentTarget as Element).getBoundingClientRect();
+    onOpen(key, {
+      x: ((r.left + r.width / 2) / window.innerWidth) * 100,
+      y: ((r.top + r.height / 2) / window.innerHeight) * 100,
+    });
   }
 
   function onMove(e: React.MouseEvent<HTMLDivElement>) {
+    if (zoomTarget) return; // câmera parada durante o mergulho
     const r = e.currentTarget.getBoundingClientRect();
     const nx = (e.clientX - r.left) / r.width - 0.5;
     const ny = (e.clientY - r.top) / r.height - 0.5;
@@ -101,20 +104,26 @@ export function RoomScene() {
     if (frontRef.current) frontRef.current.style.transform = `translate(${nx * -15}px, ${ny * -7}px)`;
   }
 
-  const camStyle: React.CSSProperties = zoom
-    ? {
-        transform: "scale(2.4)",
-        transformOrigin: `${(zoom.cx / 1600) * 100}% ${(zoom.cy / 1000) * 100}%`,
-        transition: "transform 600ms var(--nk-ease-room)",
-      }
-    : { transform: "scale(1)", transition: "transform 600ms var(--nk-ease-room)" };
-
   const spineColors = subjects.map((s) => s.color);
+
+  // a câmera: mergulha no objeto do módulo aberto e permanece lá
+  const zoomPt = zoomTarget ? ZOOM_POINT[zoomTarget] : null;
+  const camStyle: React.CSSProperties = zoomPt
+    ? {
+        transform: "scale(2.1)",
+        transformOrigin: `${(zoomPt.cx / 1600) * 100}% ${(zoomPt.cy / 1000) * 100}%`,
+        transition: "transform 700ms var(--nk-ease-room)",
+      }
+    : {
+        transform: "scale(1)",
+        transition: "transform 700ms var(--nk-ease-room)",
+      };
 
   return (
     <div
       className="relative h-screen w-full overflow-hidden bg-void"
       onMouseMove={onMove}
+      style={{ pointerEvents: zoomTarget ? "none" : undefined }}
     >
       <div className="h-full w-full" style={camStyle}>
         <svg
@@ -143,6 +152,23 @@ export function RoomScene() {
             <linearGradient id="screenGrad" x1="0" y1="0" x2="1" y2="1">
               <stop offset="0" stopColor="#1c2840" />
               <stop offset="1" stopColor="#16203a" />
+            </linearGradient>
+            <radialGradient id="moonGlow" cx="0.5" cy="0.5" r="0.5">
+              <stop offset="0" stopColor="#e8e4da" stopOpacity="0.22" />
+              <stop offset="1" stopColor="#e8e4da" stopOpacity="0" />
+            </radialGradient>
+            <radialGradient id="deskGlow" cx="0.5" cy="0.5" r="0.5">
+              <stop offset="0" stopColor="#8fa8bf" stopOpacity="0.18" />
+              <stop offset="1" stopColor="#8fa8bf" stopOpacity="0" />
+            </radialGradient>
+            {/* crescente da lua: o "branco" revela, o círculo preto recorta — sem vazar */}
+            <mask id="moonMask">
+              <circle cx="318" cy="208" r="26" fill="white" />
+              <circle cx="305" cy="199" r="23" fill="black" />
+            </mask>
+            <linearGradient id="lampCone" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0" stopColor="#e8a87c" stopOpacity="0.32" />
+              <stop offset="1" stopColor="#e8a87c" stopOpacity="0" />
             </linearGradient>
             <clipPath id="windowClip">
               <rect x="128" y="138" width="264" height="364" rx="10" />
@@ -176,8 +202,10 @@ export function RoomScene() {
                     <circle cx="160" cy="330" r="1.2" opacity="0.55" />
                   </g>
                 )}
-                {sky.stars && <circle cx="318" cy="208" r="26" fill="#e8e4da" opacity="0.85" />}
-                {sky.stars && <circle cx="308" cy="200" r="24" fill={sky.top} opacity="0.92" />}
+                {sky.stars && <circle cx="318" cy="208" r="72" fill="url(#moonGlow)" />}
+                {sky.stars && (
+                  <circle cx="318" cy="208" r="26" fill="#e8e4da" opacity="0.92" mask="url(#moonMask)" />
+                )}
                 {/* silhueta da cidade */}
                 <g fill={phase === "noite" ? "#10141f" : "#3d4150"} opacity="0.85">
                   <rect x="128" y="400" width="46" height="102" />
@@ -222,6 +250,34 @@ export function RoomScene() {
               </g>
               {/* luz da janela no chão */}
               <ellipse cx="260" cy="760" rx="240" ry="70" fill="url(#windowGlow)" />
+
+              {/* varal de luzes quentes */}
+              <g>
+                <path
+                  d="M116 122 Q260 162 404 122"
+                  fill="none"
+                  stroke="#3d4150"
+                  strokeWidth="1.5"
+                />
+                {[
+                  [159, 136],
+                  [202, 143],
+                  [260, 146],
+                  [318, 143],
+                  [361, 136],
+                ].map(([x, y], i) => (
+                  <g key={i}>
+                    <circle cx={x} cy={y + 6} r="9" fill="#e8a87c" opacity="0.16" />
+                    <circle
+                      cx={x}
+                      cy={y + 6}
+                      r="3"
+                      fill="#e8a87c"
+                      opacity={0.75 + (i % 2) * 0.2}
+                    />
+                  </g>
+                ))}
+              </g>
             </g>
 
             {/* clique na janela alterna a chuva */}
@@ -260,8 +316,8 @@ export function RoomScene() {
               role="button"
               tabIndex={0}
               aria-label="Abrir calendário"
-              onClick={() => go(HOTSPOTS.calendario)}
-              onKeyDown={(e) => e.key === "Enter" && go(HOTSPOTS.calendario)}
+              onClick={(e) => openMod(e, "calendario")}
+              onKeyDown={(e) => e.key === "Enter" && openMod(e, "calendario")}
             >
               <rect x="540" y="178" width="132" height="158" rx="8" fill="#20263a" />
               <rect x="540" y="178" width="132" height="34" rx="8" fill="#2a3148" />
@@ -312,8 +368,8 @@ export function RoomScene() {
               role="button"
               tabIndex={0}
               aria-label="Abrir disciplinas"
-              onClick={() => go(HOTSPOTS.estante)}
-              onKeyDown={(e) => e.key === "Enter" && go(HOTSPOTS.estante)}
+              onClick={(e) => openMod(e, "disciplinas")}
+              onKeyDown={(e) => e.key === "Enter" && openMod(e, "disciplinas")}
             >
               <rect x="1235" y="140" width="16" height="430" rx="4" fill="#262c3e" />
               <rect x="1490" y="140" width="16" height="430" rx="4" fill="#262c3e" />
@@ -371,14 +427,17 @@ export function RoomScene() {
               role="button"
               tabIndex={0}
               aria-label="Iniciar modo foco"
-              onClick={() => go(HOTSPOTS.luminaria)}
-              onKeyDown={(e) => e.key === "Enter" && go(HOTSPOTS.luminaria)}
+              onClick={() => router.push("/foco")}
+              onKeyDown={(e) => e.key === "Enter" && router.push("/foco")}
             >
-              <ellipse cx="282" cy="668" rx="120" ry="120" fill="url(#lampGlow)" />
+              {/* cone de luz descendo da cúpula + poça no chão (não uma bola) */}
+              <path d="M250 596 L314 596 L398 858 L166 858 Z" fill="url(#lampCone)" />
+              <ellipse cx="282" cy="856" rx="118" ry="26" fill="url(#lampGlow)" opacity="0.5" />
+              <ellipse cx="282" cy="612" rx="58" ry="40" fill="url(#lampGlow)" opacity="0.75" />
               <rect x="276" y="600" width="8" height="250" rx="4" fill="#2a3146" />
               <ellipse cx="280" cy="852" rx="42" ry="10" fill="#232a3c" />
               <path d="M240 600 L320 600 L300 548 L260 548 Z" fill="#caa06a" />
-              <ellipse cx="280" cy="600" rx="40" ry="9" fill="#e8a87c" opacity="0.9" />
+              <ellipse cx="280" cy="600" rx="40" ry="9" fill="#f0c089" opacity="0.95" />
               <rect className="nk-halo" x="226" y="534" width="110" height="330" rx="14" fill="none" stroke="#e8a87c" strokeOpacity="0.45" strokeWidth="2" />
               <g className="nk-label">
                 <rect x="216" y="494" width="146" height="30" rx="15" fill="#1e2433" />
@@ -394,9 +453,15 @@ export function RoomScene() {
             {/* mesa */}
             <rect x="418" y="648" width="772" height="26" rx="8" fill="#332b33" />
             <rect x="430" y="674" width="748" height="10" fill="#241f26" />
-            <rect x="452" y="684" width="20" height="190" rx="6" fill="#2a242c" />
             <rect x="1134" y="684" width="20" height="190" rx="6" fill="#2a242c" />
-            <rect x="452" y="700" width="200" height="140" rx="8" fill="#2a242c" opacity="0.55" />
+            {/* gaveteiro sólido sob a mesa (lado esquerdo) */}
+            <rect x="470" y="684" width="180" height="170" rx="6" fill="#2c2630" />
+            <rect x="470" y="684" width="180" height="170" rx="6" fill="none" stroke="#1b1820" strokeWidth="2" />
+            <line x1="470" y1="740" x2="650" y2="740" stroke="#1b1820" strokeWidth="2" />
+            <line x1="470" y1="796" x2="650" y2="796" stroke="#1b1820" strokeWidth="2" />
+            {[710, 766, 822].map((y) => (
+              <rect key={y} x="544" y={y} width="32" height="6" rx="3" fill="#4a4350" />
+            ))}
 
             {/* monitor — dashboard */}
             <g
@@ -404,8 +469,8 @@ export function RoomScene() {
               role="button"
               tabIndex={0}
               aria-label="Abrir dashboard"
-              onClick={() => go(HOTSPOTS.computador)}
-              onKeyDown={(e) => e.key === "Enter" && go(HOTSPOTS.computador)}
+              onClick={(e) => openMod(e, "dashboard")}
+              onKeyDown={(e) => e.key === "Enter" && openMod(e, "dashboard")}
             >
               <rect x="664" y="430" width="296" height="186" rx="12" fill="#0c0f17" />
               <rect x="672" y="438" width="280" height="170" rx="8" fill="url(#screenGrad)" />
@@ -431,6 +496,8 @@ export function RoomScene() {
               )}
               <rect x="796" y="616" width="32" height="26" fill="#0c0f17" />
               <rect x="756" y="640" width="112" height="10" rx="5" fill="#0c0f17" />
+              {/* luz da tela banhando a mesa */}
+              {screenOn && <ellipse cx="812" cy="655" rx="190" ry="22" fill="url(#deskGlow)" />}
               {/* post-it de urgência */}
               {urgent && (
                 <g transform="rotate(4 940 470)">
@@ -458,26 +525,39 @@ export function RoomScene() {
               role="button"
               tabIndex={0}
               aria-label="Abrir tarefas e anotações"
-              onClick={() => go(HOTSPOTS.caderno)}
-              onKeyDown={(e) => e.key === "Enter" && go(HOTSPOTS.caderno)}
+              onClick={(e) => openMod(e, "tarefas")}
+              onKeyDown={(e) => e.key === "Enter" && openMod(e, "tarefas")}
             >
               <g transform="rotate(-6 560 630)">
-                <rect x="476" y="600" width="168" height="58" rx="6" fill="#d8d2c4" />
-                <rect x="476" y="600" width="84" height="58" rx="6" fill="#cfc8b8" />
-                <line x1="560" y1="602" x2="560" y2="656" stroke="#a8a49a" strokeWidth="2" />
-                {[612, 622, 632, 642].map((y) => (
-                  <line key={y} x1="486" y1={y} x2="548" y2={y} stroke="#a8a49a" strokeWidth="1.4" opacity="0.7" />
+                {/* sombra do caderno na mesa */}
+                <ellipse cx="562" cy="662" rx="92" ry="11" fill="#000" opacity="0.22" />
+                {/* páginas */}
+                <rect x="476" y="600" width="168" height="58" rx="6" fill="#e2ddd0" />
+                <rect x="476" y="600" width="84" height="58" rx="6" fill="#d4cdbd" />
+                {/* vinco central + espiral */}
+                <rect x="556" y="600" width="8" height="58" fill="#c2bbab" opacity="0.6" />
+                {[486, 500, 514, 528, 542, 578, 592, 606, 620, 634].map((x) => (
+                  <rect key={x} x={x} y="596" width="3" height="8" rx="1.5" fill="#9a948a" />
                 ))}
-                {[612, 622, 632].map((y) => (
-                  <line key={y} x1="572" y1={y} x2="634" y2={y} stroke="#a8a49a" strokeWidth="1.4" opacity="0.5" />
+                {/* linhas + checkboxes (tarefas) */}
+                {[614, 624, 634, 644].map((y) => (
+                  <line key={y} x1="498" y1={y} x2="548" y2={y} stroke="#b3ada2" strokeWidth="1.4" opacity="0.8" />
                 ))}
-                <circle cx="492" cy="612" r="2.6" fill="none" stroke="#9caf88" strokeWidth="1.4" />
-                <circle cx="492" cy="622" r="2.6" fill="none" stroke="#6b6a66" strokeWidth="1.4" />
+                {[614, 624, 634].map((y) => (
+                  <line key={y} x1="584" y1={y} x2="634" y2={y} stroke="#b3ada2" strokeWidth="1.4" opacity="0.6" />
+                ))}
+                <path d="M488 614 l2.5 2.5 l4 -5" fill="none" stroke="#9caf88" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+                <circle cx="490" cy="624" r="2.6" fill="none" stroke="#8a847a" strokeWidth="1.4" />
+                <circle cx="490" cy="634" r="2.6" fill="none" stroke="#8a847a" strokeWidth="1.4" />
               </g>
-              {/* caneta */}
-              <g transform="rotate(18 600 668)">
-                <rect x="566" y="664" width="70" height="7" rx="3.5" fill="#c97b63" />
-                <path d="M636 664 L650 667.5 L636 671 Z" fill="#e8e4da" />
+              {/* lápis */}
+              <g transform="rotate(20 604 668)">
+                <ellipse cx="602" cy="673" rx="40" ry="5" fill="#000" opacity="0.18" />
+                <rect x="560" y="664" width="6" height="8" rx="2" fill="#d98c98" />
+                <rect x="566" y="664" width="5" height="8" fill="#b3674f" />
+                <rect x="571" y="664" width="66" height="8" rx="1.5" fill="#caa06a" />
+                <path d="M637 664 L651 668 L637 672 Z" fill="#e6d3b3" />
+                <path d="M647 666.6 L651 668 L647 669.4 Z" fill="#33302a" />
               </g>
               <rect className="nk-halo" x="462" y="582" width="200" height="100" rx="12" fill="none" stroke="#e8a87c" strokeOpacity="0.45" strokeWidth="2" />
               <g className="nk-label">
@@ -494,8 +574,8 @@ export function RoomScene() {
               role="button"
               tabIndex={0}
               aria-label="Abrir estatísticas"
-              onClick={() => go(HOTSPOTS.caneca)}
-              onKeyDown={(e) => e.key === "Enter" && go(HOTSPOTS.caneca)}
+              onClick={(e) => openMod(e, "estatisticas")}
+              onKeyDown={(e) => e.key === "Enter" && openMod(e, "estatisticas")}
             >
               {steamToday && (
                 <g stroke="#a8a49a" strokeWidth="2" fill="none" strokeLinecap="round" opacity="0.7">
@@ -521,8 +601,8 @@ export function RoomScene() {
               role="button"
               tabIndex={0}
               aria-label="Abrir rádio"
-              onClick={() => go(HOTSPOTS.radio)}
-              onKeyDown={(e) => e.key === "Enter" && go(HOTSPOTS.radio)}
+              onClick={(e) => openMod(e, "radio")}
+              onKeyDown={(e) => e.key === "Enter" && openMod(e, "radio")}
             >
               <line x1="1148" y1="548" x2="1180" y2="496" stroke="#3d4150" strokeWidth="3" strokeLinecap="round" />
               <circle cx="1180" cy="496" r="3.5" fill="#3d4150" />
@@ -563,12 +643,6 @@ export function RoomScene() {
           </radialGradient>
         </svg>
       </div>
-
-      {/* fade da transição de câmera */}
-      <div
-        className="pointer-events-none absolute inset-0 bg-void transition-opacity"
-        style={{ opacity: zoom ? 1 : 0, transitionDuration: "600ms", transitionDelay: zoom ? "150ms" : "0ms" }}
-      />
     </div>
   );
 }

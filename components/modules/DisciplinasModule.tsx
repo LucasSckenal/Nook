@@ -29,7 +29,7 @@ export default function DisciplinasPage() {
           return (
             <Link
               key={s.id}
-              href={`/disciplinas/${s.id}`}
+              href={`/?open=disciplinas&id=${s.id}`}
               className="group relative flex w-[120px] flex-col justify-between rounded-t-(--radius-md) px-4 pb-5 pt-4 transition-transform duration-(--nk-dur-quick) hover:-translate-y-2"
               style={{
                 background: `linear-gradient(180deg, ${s.color}38, ${s.color}1f)`,
@@ -69,7 +69,7 @@ export default function DisciplinasPage() {
         {subjects.map((s) => {
           const o = gradeOutlook(s);
           return (
-            <Link key={s.id} href={`/disciplinas/${s.id}`} className="nk-card p-5 transition-colors hover:bg-raised/60">
+            <Link key={s.id} href={`/?open=disciplinas&id=${s.id}`} className="nk-card p-5 transition-colors hover:bg-raised/60">
               <div className="mb-2 flex items-center gap-2">
                 <span className="h-2.5 w-2.5 rounded-full" style={{ background: s.color }} />
                 <p className="truncate text-sm font-medium text-ink-high">{s.name}</p>

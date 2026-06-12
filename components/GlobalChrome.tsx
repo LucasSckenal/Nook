@@ -94,12 +94,12 @@ export function GlobalChrome() {
 
       if (chord.current?.key === "g" && now - chord.current.at < 900) {
         const map: Record<string, string> = {
-          d: "/dashboard",
-          c: "/calendario",
-          t: "/tarefas",
-          e: "/disciplinas",
-          r: "/radio",
-          s: "/estatisticas",
+          d: "/?open=dashboard",
+          c: "/?open=calendario",
+          t: "/?open=tarefas",
+          e: "/?open=disciplinas",
+          r: "/?open=radio",
+          s: "/?open=estatisticas",
         };
         if (map[k]) {
           e.preventDefault();
