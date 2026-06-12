@@ -2,8 +2,8 @@
 
 /* eslint-disable @next/next/no-img-element */
 
-import { useMemo, useRef } from "react";
-import { useRouter } from "next/navigation";
+import { useMemo } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useNook } from "@/lib/store";
 import { daysBetween, relativeDay, todayIso } from "@/lib/dates";
 import type { ModuleKey } from "./ModuleOverlay";
@@ -33,6 +33,13 @@ const ROOM_IMG: Record<Phase, string> = {
   manhã: "/room/manha.png",
   tarde: "/room/tarde.png",
   entardecer: "/room/entardecer.png",
+};
+
+/** vídeo de fundo por fase (quando existir) — o quarto ganha vida.
+ * Cai para a imagem estática quando "Movimento calmo" está ligado.
+ * Conforme novos vídeos forem criados, é só apontar aqui. */
+const ROOM_VIDEO: Partial<Record<Phase, string>> = {
+  noite: "/room/noite.mp4",
 };
 
 /** ponto de mergulho da câmera por módulo (% da imagem) */
@@ -93,9 +100,19 @@ export function RoomSceneImage({
   const rainVisual = useNook((s) => s.rainVisual);
   const setRainVisual = useNook((s) => s.setRainVisual);
   const radioPlaying = useNook((s) => s.radio.playing);
-  const parallaxRef = useRef<HTMLDivElement>(null);
+  const calmMotion = useNook((s) => s.calmMotion);
+  const params = useSearchParams();
 
-  const phase = phaseOf(new Date().getHours());
+  // ?t=noite|manha|tarde|entardecer força um horário (útil para prévia)
+  const FORCE: Record<string, Phase> = {
+    noite: "noite",
+    manha: "manhã",
+    tarde: "tarde",
+    entardecer: "entardecer",
+  };
+  const forced = FORCE[params.get("t") ?? ""];
+  const phase = forced ?? phaseOf(new Date().getHours());
+  const videoSrc = !calmMotion ? ROOM_VIDEO[phase] : undefined;
   const today = todayIso();
   const steamToday = sessions.some((s) => s.date === today);
   const urgent = useMemo(() => {
@@ -119,13 +136,6 @@ export function RoomSceneImage({
     });
   }
 
-  function onMove(e: React.MouseEvent<HTMLDivElement>) {
-    if (zoomTarget || !parallaxRef.current) return;
-    const nx = e.clientX / window.innerWidth - 0.5;
-    const ny = e.clientY / window.innerHeight - 0.5;
-    parallaxRef.current.style.transform = `translate(${nx * -7}px, ${ny * -5}px) scale(1.02)`;
-  }
-
   const zoomPt = zoomTarget ? ZOOM_POINT[zoomTarget] : null;
   const camStyle: React.CSSProperties = zoomPt
     ? {
@@ -141,7 +151,6 @@ export function RoomSceneImage({
   return (
     <div
       className="relative h-screen w-full overflow-hidden bg-void"
-      onMouseMove={onMove}
       style={{ pointerEvents: zoomTarget ? "none" : undefined }}
     >
       {/* fundo borrado da mesma arte preenche as bordas (sem barras chapadas) */}
@@ -161,17 +170,27 @@ export function RoomSceneImage({
       >
         {/* a câmera */}
         <div className="h-full w-full" style={camStyle}>
-          <div
-            ref={parallaxRef}
-            className="relative h-full w-full"
-            style={{ transform: "scale(1.02)", transition: "transform 400ms ease-out" }}
-          >
-            <img
-              src={ROOM_IMG[phase]}
-              alt="Quarto de estudos do Nook"
-              className="h-full w-full select-none object-cover"
-              draggable={false}
-            />
+          <div className="relative h-full w-full">
+            {videoSrc ? (
+              <video
+                key={videoSrc}
+                src={videoSrc}
+                poster={ROOM_IMG[phase]}
+                className="h-full w-full select-none object-cover"
+                autoPlay
+                loop
+                muted
+                playsInline
+                aria-label="Quarto de estudos do Nook"
+              />
+            ) : (
+              <img
+                src={ROOM_IMG[phase]}
+                alt="Quarto de estudos do Nook"
+                className="h-full w-full select-none object-cover"
+                draggable={false}
+              />
+            )}
 
             {/* ── camadas vivas sobre a arte ─────────────────────────── */}
 

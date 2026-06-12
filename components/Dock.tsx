@@ -1,5 +1,7 @@
 "use client";
 
+/* eslint-disable @next/next/no-img-element */
+
 import { useRouter } from "next/navigation";
 import { useNook } from "@/lib/store";
 import { useMounted } from "./useMounted";
@@ -10,14 +12,14 @@ type DockItem =
   | { kind: "route"; href: string; icon: string; label: string };
 
 const ITEMS: DockItem[] = [
-  { kind: "route", href: "/", icon: "🏠", label: "Quarto" },
-  { kind: "module", key: "dashboard", icon: "💻", label: "Dashboard" },
-  { kind: "module", key: "tarefas", icon: "📝", label: "Tarefas" },
-  { kind: "module", key: "calendario", icon: "📅", label: "Calendário" },
-  { kind: "module", key: "disciplinas", icon: "📚", label: "Disciplinas" },
-  { kind: "module", key: "radio", icon: "📻", label: "Rádio" },
-  { kind: "module", key: "estatisticas", icon: "☕", label: "Estatísticas" },
-  { kind: "route", href: "/foco", icon: "🎯", label: "Foco" },
+  { kind: "route", href: "/", icon: "/Icones/Casa.png", label: "Quarto" },
+  { kind: "module", key: "dashboard", icon: "/Icones/Monitor.png", label: "Dashboard" },
+  { kind: "module", key: "tarefas", icon: "/Icones/Livro.png", label: "Tarefas" },
+  { kind: "module", key: "calendario", icon: "/Icones/Calendario.png", label: "Calendário" },
+  { kind: "module", key: "disciplinas", icon: "/Icones/Livros.png", label: "Disciplinas" },
+  { kind: "module", key: "radio", icon: "/Icones/Radio.png", label: "Rádio" },
+  { kind: "module", key: "estatisticas", icon: "/Icones/Grafico.png", label: "Estatísticas" },
+  { kind: "route", href: "/foco", icon: "/Icones/Abajur.png", label: "Foco" },
 ];
 
 const STATION_NAMES: Record<string, string> = {
@@ -60,11 +62,17 @@ export function Dock({
               key={item.kind === "route" ? item.href : item.key}
               onClick={go}
               title={item.label}
-              className={`group relative flex h-10 w-10 items-center justify-center rounded-(--radius-md) text-lg transition-all duration-(--nk-dur-instant) hover:bg-surface ${
+              className={`group relative flex h-11 w-11 items-center justify-center rounded-(--radius-md) transition-all duration-(--nk-dur-instant) hover:-translate-y-0.5 hover:bg-surface ${
                 active ? "bg-surface" : ""
               }`}
             >
-              <span>{item.icon}</span>
+              <img
+                src={item.icon}
+                alt=""
+                aria-hidden
+                draggable={false}
+                className="h-9 w-9 select-none rounded-[9px] object-contain transition-transform duration-(--nk-dur-instant) group-hover:scale-110"
+              />
               {active && (
                 <span className="absolute -bottom-1 h-1 w-1 rounded-full bg-amber" />
               )}

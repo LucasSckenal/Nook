@@ -23,12 +23,12 @@ export const MODULE_META: Record<
   ModuleKey,
   { icon: string; title: string; sub: string }
 > = {
-  dashboard: { icon: "💻", title: "Computador", sub: "dashboard & Estuda" },
-  tarefas: { icon: "📝", title: "Caderno", sub: "tarefas & anotações" },
-  calendario: { icon: "📅", title: "Calendário", sub: "sua semana, sem sustos" },
-  disciplinas: { icon: "📚", title: "Estante", sub: "disciplinas do semestre" },
-  radio: { icon: "📻", title: "Rádio", sub: "sons do quarto" },
-  estatisticas: { icon: "☕", title: "Caneca", sub: "seu esforço, com carinho" },
+  dashboard: { icon: "/Icones/Monitor.png", title: "Computador", sub: "dashboard & Estuda" },
+  tarefas: { icon: "/Icones/Livro.png", title: "Caderno", sub: "tarefas & anotações" },
+  calendario: { icon: "/Icones/Calendario.png", title: "Calendário", sub: "sua semana, sem sustos" },
+  disciplinas: { icon: "/Icones/Livros.png", title: "Estante", sub: "disciplinas do semestre" },
+  radio: { icon: "/Icones/Radio.png", title: "Rádio", sub: "sons do quarto" },
+  estatisticas: { icon: "/Icones/Grafico.png", title: "Caneca", sub: "seu esforço, com carinho" },
 };
 
 /** origem aproximada de cada objeto na cena (% da viewport) para o morph */
@@ -127,10 +127,10 @@ export function ModuleOverlay({
             >
               <span aria-hidden>←</span> quarto
             </button>
-            <div className="flex items-baseline gap-3">
-              <h1 className="font-display text-lg text-ink-high">
-                {meta.icon} {meta.title}
-              </h1>
+            <div className="flex items-center gap-2.5">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={meta.icon} alt="" aria-hidden draggable={false} className="h-7 w-7 select-none rounded-[7px] object-contain" />
+              <h1 className="font-display text-lg text-ink-high">{meta.title}</h1>
               <span className="hidden text-sm text-ink-low sm:inline">{meta.sub}</span>
             </div>
           </div>
