@@ -99,7 +99,7 @@ export function TaskRow({ task }: { task: Task }) {
 
       {!task.done && (
         <Link
-          href={`/foco?task=${task.id}`}
+          href={`/?open=foco&task=${task.id}`}
           title="Focar nesta tarefa"
           className="shrink-0 rounded-(--radius-sm) px-1.5 py-0.5 text-xs text-ink-low opacity-0 transition-all hover:text-amber group-hover:opacity-100"
         >

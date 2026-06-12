@@ -50,6 +50,7 @@ const ZOOM_POINT: Record<ModuleKey, { x: number; y: number }> = {
   disciplinas: { x: 88, y: 40 },
   radio: { x: 70, y: 61 },
   estatisticas: { x: 61, y: 63 },
+  foco: { x: 9, y: 62 },
 };
 
 interface Spot {
@@ -306,7 +307,7 @@ export function RoomSceneImage({
               className="nk-hotspot group absolute"
               style={{ left: "3.5%", top: "47%", width: "11%", height: "30%" }}
               aria-label="Iniciar modo foco"
-              onClick={() => router.push("/foco")}
+              onClick={(e) => openMod(e, "foco")}
             >
               <Frame color="#e8a87c" delay={2100} />
               <span

@@ -176,17 +176,69 @@ export default function AjustesPage() {
             <section className="nk-card nk-reveal nk-reveal-3 p-6">
               <h2 className="mb-1 font-display text-lg text-ink-high">Dados</h2>
               <p className="mb-4 text-xs text-ink-low">
-                tudo é salvo localmente no seu navegador (esta é uma demonstração)
+                tudo é salvo localmente no seu navegador — baixe um backup de vez em
+                quando para não perder o semestre
               </p>
-              <button
-                onClick={() => {
-                  resetDemo();
-                  toast({ message: "Dados de demonstração restaurados." });
-                }}
-                className="rounded-(--radius-sm) bg-surface px-4 py-2.5 text-sm text-ink-mid shadow-[0_0_0_1px_#ffffff0a] transition-colors hover:text-ink-high"
-              >
-                restaurar dados de demonstração
-              </button>
+              <div className="flex flex-wrap gap-2">
+                <button
+                  onClick={() => {
+                    const raw = localStorage.getItem("nook-v1");
+                    if (!raw) {
+                      toast({ message: "Nada para exportar ainda." });
+                      return;
+                    }
+                    const blob = new Blob([raw], { type: "application/json" });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement("a");
+                    a.href = url;
+                    a.download = `nook-backup-${new Date().toISOString().slice(0, 10)}.json`;
+                    a.click();
+                    URL.revokeObjectURL(url);
+                    toast({ message: "Backup baixado. Guarde com carinho. 🗃" });
+                  }}
+                  className="rounded-(--radius-sm) bg-amber px-4 py-2.5 text-sm font-medium text-void transition-opacity hover:opacity-90"
+                >
+                  baixar backup (.json)
+                </button>
+                <label className="cursor-pointer rounded-(--radius-sm) bg-surface px-4 py-2.5 text-sm text-ink-mid shadow-[0_0_0_1px_#ffffff0a] transition-colors hover:text-ink-high">
+                  restaurar de um backup…
+                  <input
+                    type="file"
+                    accept="application/json,.json"
+                    className="hidden"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (!file) return;
+                      const reader = new FileReader();
+                      reader.onload = () => {
+                        try {
+                          const text = String(reader.result);
+                          const parsed = JSON.parse(text);
+                          if (!parsed?.state || typeof parsed.state !== "object") {
+                            throw new Error("formato inválido");
+                          }
+                          localStorage.setItem("nook-v1", text);
+                          toast({ message: "Backup restaurado. Recarregando o quarto…" });
+                          window.setTimeout(() => window.location.reload(), 900);
+                        } catch {
+                          toast({ message: "Esse arquivo não parece um backup do Nook." });
+                        }
+                      };
+                      reader.readAsText(file);
+                      e.target.value = "";
+                    }}
+                  />
+                </label>
+                <button
+                  onClick={() => {
+                    resetDemo();
+                    toast({ message: "Dados de demonstração restaurados." });
+                  }}
+                  className="rounded-(--radius-sm) bg-surface px-4 py-2.5 text-sm text-ink-mid shadow-[0_0_0_1px_#ffffff0a] transition-colors hover:text-ink-high"
+                >
+                  restaurar demo
+                </button>
+              </div>
             </section>
           </div>
         )}

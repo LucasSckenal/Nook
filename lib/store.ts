@@ -3,6 +3,8 @@
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
 import type {
+  Assessment,
+  ClassSlot,
   FocusSession,
   Note,
   RadioState,
@@ -41,7 +43,25 @@ interface NookState {
   updateNote: (id: string, patch: Partial<Omit<Note, "id">>) => void;
   removeNote: (id: string) => void;
 
-  // notas de disciplina (avaliações)
+  // disciplinas
+  addSubject: (s: {
+    name: string;
+    code?: string;
+    color: string;
+    professor?: string;
+    room?: string;
+    schedule?: ClassSlot[];
+  }) => string;
+  updateSubject: (id: string, patch: Partial<Omit<Subject, "id">>) => void;
+  removeSubject: (id: string) => void;
+  restoreSubject: (s: Subject) => void;
+
+  // avaliações
+  addAssessment: (
+    subjectId: string,
+    a: { title: string; kind: Assessment["kind"]; date: string; weight: number }
+  ) => void;
+  removeAssessment: (subjectId: string, assessmentId: string) => void;
   setGrade: (subjectId: string, assessmentId: string, grade: number | null) => void;
 
   // foco
@@ -129,6 +149,66 @@ export const useNook = create<NookState>()(
         })),
 
       removeNote: (id) => set((s) => ({ notes: s.notes.filter((n) => n.id !== id) })),
+
+      addSubject: (s) => {
+        const id = nextId();
+        set((st) => ({
+          subjects: [
+            ...st.subjects,
+            {
+              id,
+              name: s.name,
+              code: s.code ?? "",
+              color: s.color,
+              professor: s.professor,
+              room: s.room,
+              schedule: s.schedule ?? [],
+              assessments: [],
+              materials: [],
+            },
+          ],
+        }));
+        return id;
+      },
+
+      updateSubject: (id, patch) =>
+        set((st) => ({
+          subjects: st.subjects.map((sub) => (sub.id === id ? { ...sub, ...patch } : sub)),
+        })),
+
+      removeSubject: (id) =>
+        set((st) => ({
+          subjects: st.subjects.filter((sub) => sub.id !== id),
+          // tarefas e notas da disciplina ficam, só perdem o vínculo
+          tasks: st.tasks.map((t) => (t.subjectId === id ? { ...t, subjectId: undefined } : t)),
+          notes: st.notes.map((n) => (n.subjectId === id ? { ...n, subjectId: undefined } : n)),
+        })),
+
+      restoreSubject: (sub) =>
+        set((st) =>
+          st.subjects.some((x) => x.id === sub.id) ? st : { subjects: [...st.subjects, sub] }
+        ),
+
+      addAssessment: (subjectId, a) =>
+        set((st) => ({
+          subjects: st.subjects.map((sub) =>
+            sub.id === subjectId
+              ? {
+                  ...sub,
+                  assessments: [...sub.assessments, { ...a, id: nextId(), grade: null }],
+                }
+              : sub
+          ),
+        })),
+
+      removeAssessment: (subjectId, assessmentId) =>
+        set((st) => ({
+          subjects: st.subjects.map((sub) =>
+            sub.id === subjectId
+              ? { ...sub, assessments: sub.assessments.filter((a) => a.id !== assessmentId) }
+              : sub
+          ),
+        })),
 
       setGrade: (subjectId, assessmentId, grade) =>
         set((s) => ({

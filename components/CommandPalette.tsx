@@ -49,7 +49,7 @@ export function CommandPalette({
       { id: "n-dis", label: "Abrir estante de disciplinas", hint: "G E", group: "Navegação", run: go("/?open=disciplinas") },
       { id: "n-rad", label: "Abrir rádio", hint: "G R", group: "Navegação", run: go("/?open=radio") },
       { id: "n-est", label: "Abrir estatísticas", hint: "G S", group: "Navegação", run: go("/?open=estatisticas") },
-      { id: "n-foco", label: "Iniciar sessão de foco", hint: "F", group: "Navegação", run: go("/foco") },
+      { id: "n-foco", label: "Iniciar sessão de foco", hint: "F", group: "Navegação", run: go("/?open=foco") },
       { id: "n-ajustes", label: "Abrir ajustes", hint: "tema · perfil", group: "Navegação", run: go("/ajustes") },
       { id: "n-proc", label: "Ver processo de design", hint: "Etapa 1", group: "Navegação", run: go("/processo") },
     ];

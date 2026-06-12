@@ -21,6 +21,7 @@ const ZOOM_POINT: Record<ModuleKey, { cx: number; cy: number }> = {
   disciplinas: { cx: 1365, cy: 350 },
   radio: { cx: 1105, cy: 595 },
   estatisticas: { cx: 985, cy: 600 },
+  foco: { cx: 280, cy: 560 },
 };
 
 type Phase = "noite" | "manhã" | "tarde" | "entardecer";

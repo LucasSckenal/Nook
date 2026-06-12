@@ -116,7 +116,7 @@ export function GlobalChrome() {
       }
       if (k === "f") {
         e.preventDefault();
-        router.push("/foco");
+        router.push("/?open=foco");
         return;
       }
       if (k === "escape" && pathname !== "/" && pathname !== "/foco") {

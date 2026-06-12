@@ -19,7 +19,7 @@ const ITEMS: DockItem[] = [
   { kind: "module", key: "disciplinas", icon: "/Icones/Livros.png", label: "Disciplinas" },
   { kind: "module", key: "radio", icon: "/Icones/Radio.png", label: "Rádio" },
   { kind: "module", key: "estatisticas", icon: "/Icones/Grafico.png", label: "Estatísticas" },
-  { kind: "route", href: "/foco", icon: "/Icones/Abajur.png", label: "Foco" },
+  { kind: "module", key: "foco", icon: "/Icones/Abajur.png", label: "Foco" },
 ];
 
 const STATION_NAMES: Record<string, string> = {

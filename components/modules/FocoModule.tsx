@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Suspense, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useMounted } from "@/components/useMounted";
 import { useNook } from "@/lib/store";
 import type { Mood } from "@/lib/types";
@@ -15,7 +15,11 @@ function fmtClock(totalSec: number): string {
   return `${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
 }
 
-function FocoInner() {
+/**
+ * Sessão de foco — vive DENTRO do quarto: a luz apaga, só a luminária fica,
+ * e o relógio flutua na cena. Nunca saímos do quarto.
+ */
+export default function FocoModule() {
   const router = useRouter();
   const params = useSearchParams();
   const mounted = useMounted();
@@ -79,16 +83,7 @@ function FocoInner() {
   const sub = subjects.find((s) => s.id === subjectId);
 
   return (
-    <main className="relative flex min-h-screen flex-col items-center justify-center bg-void px-6">
-      {/* luz baixa, quarto ao fundo */}
-      <div
-        className="pointer-events-none absolute inset-0"
-        style={{
-          background:
-            "radial-gradient(ellipse 70% 50% at 50% 38%, #e8a87c12, transparent 70%)",
-        }}
-      />
-
+    <div className="relative flex min-h-full flex-col items-center justify-center px-6 py-12">
       {phase === "setup" && (
         <div className="nk-reveal w-full max-w-[440px]">
           <h1 className="mb-1 text-center font-display text-3xl text-ink-high">
@@ -186,7 +181,11 @@ function FocoInner() {
           </p>
           <p
             className="font-display text-[clamp(72px,16vw,128px)] font-light leading-none text-ink-high tabular-nums"
-            style={{ opacity: phase === "pausa" ? 0.45 : 1, transition: "opacity 400ms" }}
+            style={{
+              opacity: phase === "pausa" ? 0.45 : 1,
+              transition: "opacity 400ms",
+              textShadow: "0 0 60px #e8a87c30",
+            }}
           >
             {fmtClock(remaining)}
           </p>
@@ -212,15 +211,6 @@ function FocoInner() {
               encerrar
             </button>
           </div>
-
-          {/* o gato dorme na mesa durante o foco */}
-          <svg width="120" height="48" viewBox="0 0 120 48" className="nk-cat mt-12 opacity-50" aria-hidden>
-            <ellipse cx="62" cy="34" rx="34" ry="13" fill="#262c3e" />
-            <circle cx="34" cy="28" r="12" fill="#262c3e" />
-            <path d="M26 20 L28 10 L34 18 Z" fill="#262c3e" />
-            <path d="M38 19 L43 10 L45 19 Z" fill="#262c3e" />
-            <path d="M92 36 q16 -2 13 -16" stroke="#262c3e" strokeWidth="6" fill="none" strokeLinecap="round" />
-          </svg>
         </div>
       )}
 
@@ -272,14 +262,6 @@ function FocoInner() {
           </p>
         </div>
       )}
-    </main>
-  );
-}
-
-export default function FocoPage() {
-  return (
-    <Suspense fallback={null}>
-      <FocoInner />
-    </Suspense>
+    </div>
   );
 }

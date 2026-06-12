@@ -1,19 +1,109 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import { TaskRow } from "@/components/TaskRow";
 import { useMounted } from "@/components/useMounted";
 import { fmtShort, relativeDay, todayIso, WEEKDAYS_LONG } from "@/lib/dates";
 import { gradeOutlook, useNook } from "@/lib/store";
+import { useToasts } from "@/lib/toast";
+import type { Assessment } from "@/lib/types";
+
+/** formulário de nova avaliação (prova/trabalho) */
+function NewAssessmentForm({ subjectId, onClose }: { subjectId: string; onClose: () => void }) {
+  const addAssessment = useNook((s) => s.addAssessment);
+  const push = useToasts((s) => s.push);
+  const [title, setTitle] = useState("");
+  const [kind, setKind] = useState<Assessment["kind"]>("prova");
+  const [date, setDate] = useState("");
+  const [weight, setWeight] = useState(30);
+
+  function save() {
+    if (!title.trim() || !date) return;
+    addAssessment(subjectId, {
+      title: title.trim(),
+      kind,
+      date,
+      weight: Math.min(100, Math.max(1, weight)) / 100,
+    });
+    push({ message: `${title.trim()} anotada. O Nook vigia o prazo. 🌙` });
+    onClose();
+  }
+
+  return (
+    <div className="mt-3 rounded-(--radius-md) bg-raised/60 p-4">
+      <div className="flex flex-wrap items-center gap-2">
+        <input
+          autoFocus
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          onKeyDown={(e) => e.key === "Enter" && save()}
+          placeholder="título — ex.: Prova 2"
+          className="min-w-[180px] flex-1 rounded-(--radius-sm) bg-surface px-3 py-2 text-sm text-ink-high placeholder:text-ink-low focus:outline-none"
+          aria-label="Título da avaliação"
+        />
+        <select
+          value={kind}
+          onChange={(e) => setKind(e.target.value as Assessment["kind"])}
+          className="rounded-(--radius-sm) bg-surface px-2 py-2 text-sm text-ink-mid focus:outline-none"
+          aria-label="Tipo"
+        >
+          <option value="prova">prova</option>
+          <option value="trabalho">trabalho</option>
+        </select>
+        <input
+          type="date"
+          value={date}
+          onChange={(e) => setDate(e.target.value)}
+          className="rounded-(--radius-sm) bg-surface px-2 py-2 text-sm text-ink-mid focus:outline-none"
+          aria-label="Data"
+        />
+        <label className="flex items-center gap-1.5 text-sm text-ink-mid">
+          <input
+            type="number"
+            min={1}
+            max={100}
+            value={weight}
+            onChange={(e) => setWeight(Number(e.target.value))}
+            className="w-16 rounded-(--radius-sm) bg-surface px-2 py-2 text-center text-sm text-ink-high focus:outline-none"
+            aria-label="Peso (%)"
+          />
+          % do semestre
+        </label>
+      </div>
+      <div className="mt-3 flex justify-end gap-2">
+        <button
+          onClick={onClose}
+          className="rounded-(--radius-sm) px-3 py-1.5 text-xs text-ink-mid transition-colors hover:text-ink-high"
+        >
+          cancelar
+        </button>
+        <button
+          onClick={save}
+          disabled={!title.trim() || !date}
+          className="rounded-(--radius-sm) bg-amber px-3 py-1.5 text-xs font-medium text-void transition-opacity hover:opacity-90 disabled:opacity-30"
+        >
+          anotar avaliação
+        </button>
+      </div>
+    </div>
+  );
+}
 
 /** Detalhe de uma disciplina — usado dentro da estante (overlay do quarto). */
 export function DisciplinaDetail({ id }: { id: string }) {
+  const router = useRouter();
   const mounted = useMounted();
   const subjects = useNook((s) => s.subjects);
   const tasks = useNook((s) => s.tasks);
   const setGrade = useNook((s) => s.setGrade);
+  const removeSubject = useNook((s) => s.removeSubject);
+  const restoreSubject = useNook((s) => s.restoreSubject);
+  const removeAssessment = useNook((s) => s.removeAssessment);
+  const push = useToasts((s) => s.push);
   const sub = subjects.find((s) => s.id === id);
+  const [addingAssessment, setAddingAssessment] = useState(false);
 
   // simulador de média: notas hipotéticas para avaliações sem nota
   const [sim, setSim] = useState<Record<string, number>>({});
@@ -61,7 +151,7 @@ export function DisciplinaDetail({ id }: { id: string }) {
 
       {/* cabeçalho */}
       <header
-        className="nk-reveal mb-6 rounded-(--radius-lg) p-6"
+        className="nk-reveal relative mb-6 rounded-(--radius-lg) p-6"
         style={{
           background: `linear-gradient(135deg, ${sub.color}24, transparent 60%)`,
           boxShadow: "0 0 0 1px #ffffff08",
@@ -78,13 +168,37 @@ export function DisciplinaDetail({ id }: { id: string }) {
             </span>
           ))}
         </div>
+        <button
+          onClick={() => {
+            const snapshot = sub;
+            removeSubject(sub.id);
+            push({
+              message: `${sub.name} saiu da estante.`,
+              undoLabel: "desfazer",
+              onUndo: () => restoreSubject(snapshot),
+            });
+            router.push("/?open=disciplinas");
+          }}
+          className="absolute right-4 top-4 rounded-(--radius-sm) px-2 py-1 text-xs text-ink-low transition-colors hover:text-clay"
+          title="Tirar disciplina da estante"
+        >
+          tirar da estante ✕
+        </button>
       </header>
 
       <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
         {/* provas, notas e simulador */}
         <section className="nk-card nk-reveal nk-reveal-1 p-6 md:col-span-2">
           <div className="mb-4 flex flex-wrap items-baseline justify-between gap-2">
-            <h3 className="font-display text-lg text-ink-high">Avaliações & notas</h3>
+            <div className="flex items-baseline gap-3">
+              <h3 className="font-display text-lg text-ink-high">Avaliações & notas</h3>
+              <button
+                onClick={() => setAddingAssessment(true)}
+                className="rounded-(--radius-sm) px-2 py-0.5 text-xs text-amber transition-colors hover:bg-amber/10"
+              >
+                + adicionar
+              </button>
+            </div>
             <div className="text-sm text-ink-mid">
               {outlook.current != null && (
                 <>
@@ -105,6 +219,15 @@ export function DisciplinaDetail({ id }: { id: string }) {
             </div>
           </div>
 
+          {sub.assessments.length === 0 && !addingAssessment && (
+            <button
+              onClick={() => setAddingAssessment(true)}
+              className="w-full rounded-(--radius-md) border border-dashed border-ink-faint/70 px-4 py-6 text-center text-sm text-ink-low transition-colors hover:border-amber/50 hover:text-amber"
+            >
+              Nenhuma prova ou trabalho anotado ainda. + adicionar a primeira
+            </button>
+          )}
+
           <div className="space-y-2">
             {sub.assessments
               .slice()
@@ -112,7 +235,7 @@ export function DisciplinaDetail({ id }: { id: string }) {
               .map((a) => (
                 <div
                   key={a.id}
-                  className="flex flex-wrap items-center gap-3 rounded-(--radius-md) bg-raised/50 px-4 py-3"
+                  className="group/item flex flex-wrap items-center gap-3 rounded-(--radius-md) bg-raised/50 px-4 py-3"
                 >
                   <span
                     className="h-2 w-2 shrink-0 rounded-full"
@@ -169,9 +292,21 @@ export function DisciplinaDetail({ id }: { id: string }) {
                       </button>
                     </div>
                   )}
+                  <button
+                    onClick={() => removeAssessment(sub.id, a.id)}
+                    className="text-ink-faint opacity-0 transition-all hover:text-clay group-hover/item:opacity-100"
+                    title="Remover avaliação"
+                    aria-label={`Remover ${a.title}`}
+                  >
+                    ✕
+                  </button>
                 </div>
               ))}
           </div>
+
+          {addingAssessment && (
+            <NewAssessmentForm subjectId={sub.id} onClose={() => setAddingAssessment(false)} />
+          )}
 
           {projection != null && (
             <p className="mt-4 rounded-(--radius-md) border border-lavender/30 bg-lavender/5 px-4 py-3 text-sm text-ink-mid">

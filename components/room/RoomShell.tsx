@@ -20,6 +20,7 @@ const KEYS: ModuleKey[] = [
   "disciplinas",
   "radio",
   "estatisticas",
+  "foco",
 ];
 
 function isModuleKey(v: string | null): v is ModuleKey {
@@ -181,7 +182,7 @@ export function RoomShell() {
         <Link className="transition-colors hover:text-amber" href="/?open=disciplinas">estante</Link>
         <Link className="transition-colors hover:text-amber" href="/?open=radio">rádio</Link>
         <Link className="transition-colors hover:text-amber" href="/?open=estatisticas">caneca</Link>
-        <Link className="transition-colors hover:text-amber" href="/foco">modo foco</Link>
+        <Link className="transition-colors hover:text-amber" href="/?open=foco">modo foco</Link>
         <span className="text-ink-faint">·</span>
         <Link className="transition-colors hover:text-lavender" href="/processo">processo de design</Link>
       </nav>

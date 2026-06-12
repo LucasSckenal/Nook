@@ -10,6 +10,7 @@ import CalendarioPage from "@/components/modules/CalendarioModule";
 import DisciplinasPage from "@/components/modules/DisciplinasModule";
 import RadioPage from "@/components/modules/RadioModule";
 import EstatisticasPage from "@/components/modules/EstatisticasModule";
+import FocoModule from "@/components/modules/FocoModule";
 
 export type ModuleKey =
   | "dashboard"
@@ -17,7 +18,8 @@ export type ModuleKey =
   | "calendario"
   | "disciplinas"
   | "radio"
-  | "estatisticas";
+  | "estatisticas"
+  | "foco";
 
 export const MODULE_META: Record<
   ModuleKey,
@@ -29,6 +31,7 @@ export const MODULE_META: Record<
   disciplinas: { icon: "/Icones/Livros.png", title: "Estante", sub: "disciplinas do semestre" },
   radio: { icon: "/Icones/Radio.png", title: "Rádio", sub: "sons do quarto" },
   estatisticas: { icon: "/Icones/Grafico.png", title: "Caneca", sub: "seu esforço, com carinho" },
+  foco: { icon: "/Icones/Abajur.png", title: "Luminária", sub: "modo foco" },
 };
 
 /** origem aproximada de cada objeto na cena (% da viewport) para o morph */
@@ -39,6 +42,7 @@ export const MODULE_ORIGIN: Record<ModuleKey, { x: number; y: number }> = {
   disciplinas: { x: 88, y: 40 },
   radio: { x: 70, y: 61 },
   estatisticas: { x: 61, y: 62 },
+  foco: { x: 9, y: 62 },
 };
 
 function ModuleBody({ moduleKey, detailId }: { moduleKey: ModuleKey; detailId?: string }) {
@@ -55,6 +59,8 @@ function ModuleBody({ moduleKey, detailId }: { moduleKey: ModuleKey; detailId?: 
       return <RadioPage />;
     case "estatisticas":
       return <EstatisticasPage />;
+    case "foco":
+      return <FocoModule />;
   }
 }
 
@@ -92,6 +98,50 @@ export function ModuleOverlay({
   // o vidro nasce na direção do objeto (deslocado do centro da tela)
   const dx = (origin.x - 50) * 0.8;
   const dy = (origin.y - 50) * 0.8;
+
+  // FOCO: não é um vidro — é a luz do quarto apagando. Só a luminária fica
+  // acesa e o relógio flutua na própria cena. Sem dock, sem distração.
+  if (moduleKey === "foco") {
+    return (
+      <div className="fixed inset-0 z-40">
+        {/* escuridão que toma o quarto */}
+        <div
+          className="absolute inset-0"
+          style={{
+            background:
+              "radial-gradient(ellipse 60% 70% at 14% 64%, #e8a87c14, transparent 60%), radial-gradient(ellipse 70% 50% at 50% 38%, #e8a87c0a, transparent 70%), #06080acc",
+            opacity: open ? 1 : 0,
+            transition: "opacity 700ms var(--nk-ease-ui)",
+          }}
+          aria-hidden
+        />
+        <button
+          onClick={onClose}
+          className="absolute left-5 top-5 z-10 flex items-center gap-2 rounded-(--radius-sm) px-2 py-1 text-sm text-ink-low transition-colors hover:text-amber"
+          title="Voltar ao quarto (Esc)"
+          style={{
+            opacity: open ? 1 : 0,
+            transition: "opacity 400ms var(--nk-ease-ui) 200ms",
+          }}
+        >
+          <span aria-hidden>←</span> acender a luz
+        </button>
+        <div
+          className="relative h-full overflow-y-auto"
+          role="dialog"
+          aria-label="Sessão de foco"
+          style={{
+            opacity: open ? 1 : 0,
+            transform: open ? "scale(1)" : "scale(0.97)",
+            transition:
+              "opacity 500ms var(--nk-ease-ui) 150ms, transform 600ms var(--nk-ease-room) 150ms",
+          }}
+        >
+          <ModuleBody moduleKey={moduleKey} detailId={detailId} />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="fixed inset-0 z-40 flex justify-center px-3 pb-20 pt-3 sm:px-8 sm:pb-22 sm:pt-6 md:px-14 md:pt-8">

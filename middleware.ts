@@ -13,6 +13,7 @@ const MODULES = new Set([
   "disciplinas",
   "radio",
   "estatisticas",
+  "foco",
 ]);
 
 export function middleware(req: NextRequest) {
@@ -27,6 +28,7 @@ export function middleware(req: NextRequest) {
     if (seg[0] === "disciplinas" && seg[1]) {
       url.searchParams.set("id", seg[1]);
     }
+    // demais query params (ex.: /foco?task=x) são preservados pelo clone
     return NextResponse.redirect(url);
   }
 
@@ -42,5 +44,6 @@ export const config = {
     "/disciplinas/:id*",
     "/radio",
     "/estatisticas",
+    "/foco",
   ],
 };
