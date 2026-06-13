@@ -94,6 +94,34 @@ body::after {
   background: transparent;
 }
 
+/* folha de papel sobre a mesa (estatísticas — seguradas pela caneca) */
+.nk-sheet {
+  position: relative;
+  background: linear-gradient(180deg, #1d2331, #171c28);
+  border-radius: var(--radius-md);
+  box-shadow:
+    0 0 0 1px #ffffff0a,
+    0 12px 26px #00000040,
+    inset 0 1px 0 #ffffff08;
+}
+/* marca redonda de café — a caneca esteve aqui */
+.nk-coffee-ring {
+  position: absolute;
+  width: 74px;
+  height: 74px;
+  border-radius: 9999px;
+  border: 7px solid #b3674f2e;
+  pointer-events: none;
+  filter: blur(0.4px);
+}
+.nk-coffee-ring::after {
+  content: "";
+  position: absolute;
+  inset: -11px;
+  border-radius: 9999px;
+  border: 2.5px solid #b3674f1c;
+}
+
 /* ── elevação por luz ──────────────────────────────────────────────── */
 .nk-card {
   background: var(--color-surface);

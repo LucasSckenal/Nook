@@ -160,7 +160,7 @@ export function RoomSceneImage({
         alt=""
         aria-hidden
         className="pointer-events-none absolute inset-0 h-full w-full select-none object-cover"
-        style={{ filter: "blur(48px) brightness(0.45) saturate(1.1)", transform: "scale(1.15)" }}
+        style={{ filter: "blur(22px) brightness(0.78) saturate(1.15)", transform: "scale(1.12)" }}
         draggable={false}
       />
 
@@ -342,7 +342,7 @@ export function RoomSceneImage({
         className="pointer-events-none absolute inset-0"
         style={{
           background:
-            "radial-gradient(ellipse 75% 62% at 50% 44%, transparent 58%, #04060acc 100%)",
+            "radial-gradient(ellipse 80% 66% at 50% 44%, transparent 64%, #04060a88 100%)",
         }}
       />
     </div>

@@ -75,9 +75,13 @@ export default function EstatisticasPage() {
 
   return (
     <div className="mx-auto max-w-[900px]">
+      <p className="nk-reveal mb-5 text-sm text-ink-mid">
+        as folhas que a caneca estava segurando — seu esforço, com carinho. ☕
+      </p>
       <div className="grid grid-cols-1 gap-5 md:grid-cols-3">
-        {/* totais da semana */}
-        <section className="nk-card nk-reveal p-6">
+        {/* totais da semana — a folha com a marca da caneca */}
+        <section className="nk-sheet nk-reveal p-6" style={{ rotate: "-0.7deg" }}>
+          <span className="nk-coffee-ring -right-3 -top-4" aria-hidden />
           <h3 className="mb-1 text-sm text-ink-mid">esta semana</h3>
           <p className="font-display text-4xl text-amber">{minutesToHuman(weekTotal)}</p>
           <p className="mt-1 text-sm text-ink-mid">de estudo focado</p>
@@ -87,7 +91,7 @@ export default function EstatisticasPage() {
         </section>
 
         {/* barras da semana */}
-        <section className="nk-card nk-reveal nk-reveal-1 p-6 md:col-span-2">
+        <section className="nk-sheet nk-reveal nk-reveal-1 p-6 md:col-span-2" style={{ rotate: "0.4deg" }}>
           <h3 className="mb-4 text-sm text-ink-mid">distribuição da semana</h3>
           <div className="flex h-32 items-end justify-between gap-2">
             {week.map((d) => (
@@ -118,7 +122,7 @@ export default function EstatisticasPage() {
         </section>
 
         {/* equilíbrio por disciplina */}
-        <section className="nk-card nk-reveal nk-reveal-2 p-6 md:col-span-2">
+        <section className="nk-sheet nk-reveal nk-reveal-2 p-6 md:col-span-2" style={{ rotate: "-0.35deg" }}>
           <h3 className="mb-1 text-sm text-ink-mid">equilíbrio por disciplina</h3>
           <p className="mb-4 text-xs text-ink-low">últimos 14 dias — onde sua atenção esteve</p>
           <div className="space-y-3">
@@ -146,7 +150,7 @@ export default function EstatisticasPage() {
         </section>
 
         {/* constância gentil */}
-        <section className="nk-card nk-reveal nk-reveal-3 p-6">
+        <section className="nk-sheet nk-reveal nk-reveal-3 p-6" style={{ rotate: "0.6deg" }}>
           <h3 className="mb-1 text-sm text-ink-mid">constância</h3>
           <p className="mb-4 text-xs text-ink-low">sem streaks que punem — só presença</p>
           <div className="grid grid-cols-7 gap-1.5">
@@ -170,7 +174,7 @@ export default function EstatisticasPage() {
         </section>
 
         {/* humor das sessões */}
-        <section className="nk-card nk-reveal nk-reveal-4 p-6 md:col-span-3">
+        <section className="nk-sheet nk-reveal nk-reveal-4 p-6 md:col-span-3" style={{ rotate: "-0.25deg" }}>
           <h3 className="mb-3 text-sm text-ink-mid">como as últimas sessões terminaram</h3>
           <div className="flex flex-wrap gap-6 text-sm">
             <span className="text-ink-mid">

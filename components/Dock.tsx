@@ -27,7 +27,7 @@ const STATION_NAMES: Record<string, string> = {
   chuva: "Chuva",
   biblioteca: "Biblioteca",
   cafeteria: "Cafeteria",
-  white: "White noise",
+  white: "Ventilador",
 };
 
 /**

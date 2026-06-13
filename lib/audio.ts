@@ -81,14 +81,44 @@ function makeRain(ac: AudioContext): LayerNodes {
 }
 
 function makeWhite(ac: AudioContext): LayerNodes {
+  // ventilador no canto do quarto: sopro grave + giro das pás + zumbido do motor
   const gain = ac.createGain();
+
+  // sopro: ruído filtrado bem para baixo
   const src = noiseSource(ac, "white");
   const lp = ac.createBiquadFilter();
   lp.type = "lowpass";
-  lp.frequency.value = 6000;
-  src.connect(lp).connect(gain);
+  lp.frequency.value = 520;
+  const breath = ac.createGain();
+  breath.gain.value = 1.6;
+
+  // giro das pás: o sopro pulsa devagar (wobble de amplitude)
+  const spin = ac.createOscillator();
+  spin.frequency.value = 0.9;
+  const spinDepth = ac.createGain();
+  spinDepth.gain.value = 0.18;
+  spin.connect(spinDepth).connect(breath.gain);
+  spin.start();
+
+  // zumbido do motor, quase imperceptível
+  const hum = ac.createOscillator();
+  hum.type = "triangle";
+  hum.frequency.value = 84;
+  const humGain = ac.createGain();
+  humGain.gain.value = 0.012;
+  hum.connect(humGain).connect(gain);
+  hum.start();
+
+  src.connect(lp).connect(breath).connect(gain);
   src.start();
-  return { gain, stop: () => src.stop() };
+  return {
+    gain,
+    stop: () => {
+      src.stop();
+      spin.stop();
+      hum.stop();
+    },
+  };
 }
 
 function makeLibrary(ac: AudioContext): LayerNodes {
