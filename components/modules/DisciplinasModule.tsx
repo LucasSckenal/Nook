@@ -2,11 +2,13 @@
 
 import Link from "next/link";
 import { useState } from "react";
+import { SlotEditor } from "@/components/SlotEditor";
 import { useMounted } from "@/components/useMounted";
 import { daysBetween, relativeDay, todayIso } from "@/lib/dates";
 import { gradeOutlook, useNook } from "@/lib/store";
 import { useToasts } from "@/lib/toast";
 import { audioUiTick } from "@/lib/audio";
+import type { ClassSlot } from "@/lib/types";
 
 /** paleta de lombadas — tons do design system Lanterna */
 const SPINE_COLORS = [
@@ -30,6 +32,7 @@ function NewSubjectForm({ onClose }: { onClose: () => void }) {
   const [color, setColor] = useState(SPINE_COLORS[0]);
   const [professor, setProfessor] = useState("");
   const [room, setRoom] = useState("");
+  const [slots, setSlots] = useState<ClassSlot[]>([]);
 
   function save() {
     if (!name.trim()) return;
@@ -39,6 +42,7 @@ function NewSubjectForm({ onClose }: { onClose: () => void }) {
       color,
       professor: professor.trim() || undefined,
       room: room.trim() || undefined,
+      schedule: slots.filter((s) => s.start && s.end),
     });
     if (uiSounds) audioUiTick();
     push({ message: `${name.trim()} entrou na estante. 📚` });
@@ -80,6 +84,10 @@ function NewSubjectForm({ onClose }: { onClose: () => void }) {
             className="w-32 rounded-(--radius-sm) bg-raised px-3 py-2.5 text-sm text-ink-high placeholder:text-ink-low focus:outline-none"
             aria-label="Sala"
           />
+        </div>
+        <div>
+          <p className="mb-2 text-xs text-ink-low">horários de aula (aparecem no calendário)</p>
+          <SlotEditor slots={slots} onChange={setSlots} />
         </div>
         <div className="flex items-center gap-2" role="radiogroup" aria-label="Cor da lombada">
           <span className="mr-1 text-xs text-ink-low">cor da lombada</span>

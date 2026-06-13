@@ -2,10 +2,11 @@
 
 /* eslint-disable @next/next/no-img-element */
 
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useNook } from "@/lib/store";
 import { daysBetween, relativeDay, todayIso } from "@/lib/dates";
+import { audioPurrStart, audioPurrStop } from "@/lib/audio";
 import type { ModuleKey } from "./ModuleOverlay";
 
 /**
@@ -100,7 +101,16 @@ export function RoomSceneImage({
   const sessions = useNook((s) => s.sessions);
   const rainVisual = useNook((s) => s.rainVisual);
   const setRainVisual = useNook((s) => s.setRainVisual);
+  const setRadio = useNook((s) => s.setRadio);
   const radioPlaying = useNook((s) => s.radio.playing);
+  const uiSounds = useNook((s) => s.uiSounds);
+
+  // "acendendo a luz": a cena nasce do escuro, a luminária acende primeiro
+  const [lit, setLit] = useState(false);
+  useEffect(() => {
+    const r = requestAnimationFrame(() => setLit(true));
+    return () => cancelAnimationFrame(r);
+  }, []);
   const calmMotion = useNook((s) => s.calmMotion);
   const params = useSearchParams();
 
@@ -160,14 +170,23 @@ export function RoomSceneImage({
         alt=""
         aria-hidden
         className="pointer-events-none absolute inset-0 h-full w-full select-none object-cover"
-        style={{ filter: "blur(22px) brightness(0.78) saturate(1.15)", transform: "scale(1.12)" }}
+        style={{
+          filter: `blur(22px) brightness(${lit ? 0.78 : 0.03}) saturate(1.15)`,
+          transform: "scale(1.12)",
+          transition: "filter 1300ms var(--nk-ease-ui) 250ms",
+        }}
         draggable={false}
       />
 
       {/* caixa 3:2 — mostra a cena inteira (contain) com sangria mínima */}
       <div
         className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"
-        style={{ width: "min(100vw, 150vh)", aspectRatio: "3 / 2" }}
+        style={{
+          width: "min(100vw, 150vh)",
+          aspectRatio: "3 / 2",
+          filter: lit ? "brightness(1)" : "brightness(0.04)",
+          transition: "filter 1300ms var(--nk-ease-ui) 250ms",
+        }}
       >
         {/* a câmera */}
         <div className="h-full w-full" style={camStyle}>
@@ -216,6 +235,21 @@ export function RoomSceneImage({
                 </g>
               </svg>
             )}
+
+            {/* o dia de hoje, pendurado no calendário da parede */}
+            <span
+              className="pointer-events-none absolute z-[4] -rotate-2 rounded-[5px] px-1.5 py-0.5 font-mono text-[clamp(8px,0.8vw,12px)] tabular-nums"
+              style={{
+                left: "40.2%",
+                top: "23.4%",
+                background: "#e8a87c",
+                color: "#16130e",
+                boxShadow: "0 2px 8px #00000070",
+              }}
+              aria-hidden
+            >
+              {new Date().getDate()}
+            </span>
 
             {/* post-it de urgência no monitor */}
             {urgent && (
@@ -291,7 +325,12 @@ export function RoomSceneImage({
               className="nk-hotspot group absolute"
               style={{ left: "2.5%", top: "3.5%", width: "27.5%", height: "28%" }}
               aria-label={rainVisual ? "Parar a chuva" : "Deixar chover"}
-              onClick={() => setRainVisual(!rainVisual)}
+              onClick={() => {
+                const next = !rainVisual;
+                setRainVisual(next);
+                // o que se vê também se ouve: a chuva visual liga a sonora
+                setRadio({ rainLayer: next });
+              }}
             >
               <Frame color="#8fa8bf" delay={1100} />
               <span
@@ -318,6 +357,21 @@ export function RoomSceneImage({
               </span>
             </button>
 
+            {/* o gato — fazer carinho (ele ronrona) */}
+            <button
+              className="absolute cursor-pointer"
+              style={{ left: "1.5%", top: "76%", width: "19%", height: "20%" }}
+              aria-label="Fazer carinho no gato"
+              title="rrrr…"
+              onMouseEnter={() => uiSounds && audioPurrStart()}
+              onMouseLeave={() => audioPurrStop()}
+              onClick={() => {
+                if (!uiSounds) return;
+                audioPurrStart();
+                window.setTimeout(() => audioPurrStop(), 2200);
+              }}
+            />
+
             {/* pôster: processo de design */}
             <button
               className="nk-hotspot group absolute"
@@ -336,6 +390,18 @@ export function RoomSceneImage({
           </div>
         </div>
       </div>
+
+      {/* clarão quente da luminária acendendo primeiro */}
+      <div
+        className="pointer-events-none absolute inset-0 z-[3]"
+        style={{
+          background:
+            "radial-gradient(ellipse 34% 44% at 11% 62%, #f0c08938, transparent 70%)",
+          opacity: lit ? 0 : 1,
+          transition: "opacity 1500ms var(--nk-ease-ui) 650ms",
+        }}
+        aria-hidden
+      />
 
       {/* vinheta cinematográfica por cima da arte */}
       <div

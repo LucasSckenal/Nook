@@ -30,6 +30,13 @@ function PreferencesSync() {
   const theme = useNook((s) => s.theme);
   const calmMotion = useNook((s) => s.calmMotion);
 
+  // PWA: registra o service worker (cache leve + offline)
+  useEffect(() => {
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker.register("/sw.js").catch(() => {});
+    }
+  }, []);
+
   useEffect(() => {
     document.documentElement.dataset.theme = theme;
   }, [theme]);

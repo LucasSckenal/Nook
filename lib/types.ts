@@ -41,7 +41,9 @@ export interface Task {
   due?: string; // ISO yyyy-mm-dd
   done: boolean;
   doneAt?: string;
-  notes?: string;
+  notes?: string; // anotações em markdown leve
+  color?: string; // cor de destaque escolhida pelo usuário
+  recurring?: boolean; // semanal: ao concluir, renasce +7 dias
   createdAt: string;
 }
 

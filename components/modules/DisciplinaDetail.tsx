@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
+import { SlotEditor } from "@/components/SlotEditor";
 import { TaskRow } from "@/components/TaskRow";
 import { useMounted } from "@/components/useMounted";
 import { fmtShort, relativeDay, todayIso, WEEKDAYS_LONG } from "@/lib/dates";
@@ -102,8 +103,10 @@ export function DisciplinaDetail({ id }: { id: string }) {
   const restoreSubject = useNook((s) => s.restoreSubject);
   const removeAssessment = useNook((s) => s.removeAssessment);
   const push = useToasts((s) => s.push);
+  const updateSubject = useNook((s) => s.updateSubject);
   const sub = subjects.find((s) => s.id === id);
   const [addingAssessment, setAddingAssessment] = useState(false);
+  const [editingSchedule, setEditingSchedule] = useState(false);
 
   // simulador de média: notas hipotéticas para avaliações sem nota
   const [sim, setSim] = useState<Record<string, number>>({});
@@ -159,7 +162,7 @@ export function DisciplinaDetail({ id }: { id: string }) {
       >
         <p className="text-xs uppercase tracking-wider text-ink-low">{sub.code}</p>
         <h2 className="mt-1 font-display text-3xl text-ink-high">{sub.name}</h2>
-        <div className="mt-3 flex flex-wrap gap-x-6 gap-y-1 text-sm text-ink-mid">
+        <div className="mt-3 flex flex-wrap items-center gap-x-6 gap-y-1 text-sm text-ink-mid">
           {sub.professor && <span>{sub.professor}</span>}
           {sub.room && <span>{sub.room}</span>}
           {sub.schedule.map((c, i) => (
@@ -167,7 +170,21 @@ export function DisciplinaDetail({ id }: { id: string }) {
               {WEEKDAYS_LONG[c.weekday]} {c.start}–{c.end}
             </span>
           ))}
+          <button
+            onClick={() => setEditingSchedule((v) => !v)}
+            className="rounded-(--radius-sm) px-1.5 py-0.5 text-xs text-amber transition-colors hover:bg-amber/10"
+          >
+            {editingSchedule ? "fechar" : sub.schedule.length === 0 ? "+ horários de aula" : "editar horários ✎"}
+          </button>
         </div>
+        {editingSchedule && (
+          <div className="mt-3 rounded-(--radius-md) bg-raised/50 p-3">
+            <SlotEditor
+              slots={sub.schedule}
+              onChange={(next) => updateSubject(sub.id, { schedule: next })}
+            />
+          </div>
+        )}
         <button
           onClick={() => {
             const snapshot = sub;

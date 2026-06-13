@@ -11,7 +11,8 @@ import {
 } from "./ModuleOverlay";
 import { useMounted } from "@/components/useMounted";
 import { useNook } from "@/lib/store";
-import { greeting } from "@/lib/dates";
+import { daysBetween, greeting, relativeDay, todayIso } from "@/lib/dates";
+import { toast } from "@/lib/toast";
 
 const KEYS: ModuleKey[] = [
   "dashboard",
@@ -84,6 +85,43 @@ export function RoomShell() {
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [activeKey, router]);
+
+  // lembrete gentil na chegada: prazos próximos, no máximo 1x por dia
+  const subjects = useNook((s) => s.subjects);
+  const tasks = useNook((s) => s.tasks);
+  const onboarded = useNook((s) => s.onboarded);
+  useEffect(() => {
+    if (!mounted || !onboarded || activeKey) return;
+    const today = todayIso();
+    if (localStorage.getItem("nook-greet") === today) return;
+
+    const exam = subjects
+      .flatMap((s) => s.assessments.map((a) => ({ s, a })))
+      .filter(({ a }) => a.grade == null && daysBetween(today, a.date) >= 0 && daysBetween(today, a.date) <= 2)
+      .sort((x, y) => x.a.date.localeCompare(y.a.date))[0];
+    const dueToday = tasks.filter((t) => !t.done && t.due && t.due <= today).length;
+
+    if (!exam && dueToday === 0) return;
+    localStorage.setItem("nook-greet", today);
+
+    const t = window.setTimeout(() => {
+      if (exam) {
+        toast({
+          message: `🕯 ${exam.a.title} (${exam.s.name}) ${relativeDay(exam.a.date)}.`,
+          undoLabel: "focar agora",
+          onUndo: () => router.push("/?open=foco"),
+        });
+      } else {
+        toast({
+          message: `🕯 ${dueToday} tarefa${dueToday > 1 ? "s" : ""} esperando por hoje.`,
+          undoLabel: "ver tarefas",
+          onUndo: () => router.push("/?open=tarefas"),
+        });
+      }
+    }, 1600); // depois da luz acender
+    return () => window.clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mounted, onboarded]);
 
   function openFromRoom(key: ModuleKey, origin: { x: number; y: number }) {
     pendingOrigin.current = origin;

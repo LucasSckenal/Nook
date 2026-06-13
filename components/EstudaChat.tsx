@@ -1,7 +1,9 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { ESTUDA_SUGGESTIONS, estudaRespond, type EstudaArtifact } from "@/lib/estuda";
+import { estudaGemini } from "@/lib/gemini";
 import { useNook } from "@/lib/store";
 
 interface Msg {
@@ -27,6 +29,10 @@ function rich(text: string) {
 export function EstudaChat() {
   const subjects = useNook((s) => s.subjects);
   const tasks = useNook((s) => s.tasks);
+  const sessions = useNook((s) => s.sessions);
+  const geminiKey = useNook((s) => s.geminiKey);
+  const live = geminiKey.trim().length > 0;
+
   const [msgs, setMsgs] = useState<Msg[]>([
     {
       role: "estuda",
@@ -41,13 +47,35 @@ export function EstudaChat() {
     endRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [msgs, thinking]);
 
-  function send(text: string) {
+  async function send(text: string) {
     const q = text.trim();
     if (!q || thinking) return;
+    const history = msgs
+      .filter((m) => !m.artifact) // só texto puro vira histórico
+      .map((m) => ({ role: m.role, text: m.text }));
     setMsgs((m) => [...m, { role: "user", text: q }]);
     setInput("");
     setThinking(true);
-    // pausa proposital: a Estuda nunca responde "na cara" — ritmo calmo
+
+    if (live) {
+      try {
+        const reply = await estudaGemini(geminiKey, history, q, { subjects, tasks, sessions });
+        setMsgs((m) => [...m, { role: "estuda", text: reply }]);
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : "algo deu errado";
+        // cai para o roteiro local, mas avisa o que houve
+        const fb = estudaRespond(q, { subjects, tasks });
+        setMsgs((m) => [
+          ...m,
+          { role: "estuda", text: `*(Gemini: ${msg} — respondendo no modo local)*\n\n${fb.text}`, artifact: fb.artifact },
+        ]);
+      } finally {
+        setThinking(false);
+      }
+      return;
+    }
+
+    // sem chave: roteiro local com pausa proposital (ritmo calmo)
     window.setTimeout(() => {
       const reply = estudaRespond(q, { subjects, tasks });
       setMsgs((m) => [...m, { role: "estuda", text: reply.text, artifact: reply.artifact }]);
@@ -61,10 +89,19 @@ export function EstudaChat() {
         <span className="flex h-7 w-7 items-center justify-center rounded-full bg-lavender/20 text-sm">
           🪻
         </span>
-        <div>
+        <div className="flex-1">
           <p className="text-sm font-medium text-ink-high">Estuda</p>
           <p className="text-xs text-ink-low">
-            demo local — em produção, API Claude com contexto do semestre (doc 09)
+            {live ? (
+              <span className="text-moss">● IA ao vivo (Gemini) · conhece o seu semestre</span>
+            ) : (
+              <>
+                modo local — ligue a IA real em{" "}
+                <Link href="/ajustes" className="text-amber hover:underline">
+                  Ajustes
+                </Link>
+              </>
+            )}
           </p>
         </div>
       </div>

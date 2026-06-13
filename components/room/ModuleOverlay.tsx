@@ -167,8 +167,73 @@ export function ModuleOverlay({
         role="dialog"
         aria-label={meta.title}
       >
+        {/* ── o material do objeto ──────────────────────────────────── */}
+        {moduleKey === "tarefas" && (
+          <div className="pointer-events-none absolute inset-0 z-0" aria-hidden>
+            {/* pauta do caderno */}
+            <div
+              className="absolute inset-0"
+              style={{
+                backgroundImage:
+                  "repeating-linear-gradient(0deg, transparent 0 27px, #8fa8bf10 27px 28px)",
+                backgroundPosition: "0 72px",
+              }}
+            />
+            {/* margem vermelha */}
+            <div className="absolute bottom-0 top-12 w-px" style={{ left: 60, background: "#c97b6338" }} />
+            {/* espiral */}
+            <div className="absolute bottom-8 left-3 top-16 flex flex-col justify-between">
+              {Array.from({ length: 12 }).map((_, i) => (
+                <span
+                  key={i}
+                  className="h-3.5 w-3.5 rounded-full border-2"
+                  style={{ borderColor: "#3d4150", background: "#0b0e1480", boxShadow: "inset 0 1px 2px #000" }}
+                />
+              ))}
+            </div>
+          </div>
+        )}
+        {moduleKey === "dashboard" && (
+          <div className="pointer-events-none absolute inset-0 z-0" aria-hidden>
+            {/* brilho azulado de tela ligada */}
+            <div
+              className="absolute inset-0"
+              style={{
+                background:
+                  "radial-gradient(ellipse 90% 60% at 50% 0%, #1c284055, transparent 65%)",
+              }}
+            />
+            <div
+              className="absolute inset-x-0 top-0 h-px"
+              style={{ background: "linear-gradient(90deg, transparent, #8fa8bf50, transparent)" }}
+            />
+          </div>
+        )}
+        {moduleKey === "calendario" && (
+          <div className="pointer-events-none absolute inset-x-0 top-0 z-20 flex justify-center" aria-hidden>
+            {/* o pino que prende a folha na parede */}
+            <span
+              className="-mt-2 h-4 w-4 rounded-full"
+              style={{
+                background: "radial-gradient(circle at 35% 30%, #d9a88a, #8a5a3f 70%)",
+                boxShadow: "0 3px 6px #000000a0, 0 0 0 1px #00000060",
+              }}
+            />
+          </div>
+        )}
+        {moduleKey === "radio" && (
+          <div
+            className="pointer-events-none absolute inset-0 z-0"
+            style={{
+              background:
+                "linear-gradient(165deg, #2b211a30 0%, transparent 50%, #1b140f40 100%)",
+            }}
+            aria-hidden
+          />
+        )}
+
         {/* cabeçalho fino do vidro */}
-        <header className="flex items-center justify-between border-b border-white/[0.06] px-5 py-3 sm:px-7">
+        <header className="relative z-[1] flex items-center justify-between border-b border-white/[0.06] px-5 py-3 sm:px-7">
           <div className="flex items-center gap-4">
             <button
               onClick={onClose}
@@ -184,13 +249,22 @@ export function ModuleOverlay({
               <span className="hidden text-sm text-ink-low sm:inline">{meta.sub}</span>
             </div>
           </div>
-          <kbd className="hidden rounded-md bg-surface/70 px-2 py-1 text-xs text-ink-low shadow-[0_0_0_1px_#ffffff10] md:block">
-            Ctrl K
-          </kbd>
+          <div className="flex items-center gap-3">
+            {moduleKey === "dashboard" && (
+              <span className="hidden items-center gap-1.5 md:flex" aria-hidden>
+                <span className="h-2.5 w-2.5 rounded-full bg-clay/80" />
+                <span className="h-2.5 w-2.5 rounded-full bg-amber/80" />
+                <span className="h-2.5 w-2.5 rounded-full bg-moss/80" />
+              </span>
+            )}
+            <kbd className="hidden rounded-md bg-surface/70 px-2 py-1 text-xs text-ink-low shadow-[0_0_0_1px_#ffffff10] md:block">
+              Ctrl K
+            </kbd>
+          </div>
         </header>
 
         {/* conteúdo do módulo */}
-        <div className="flex-1 overflow-y-auto">
+        <div className="relative z-[1] flex-1 overflow-y-auto">
           <main
             className="mx-auto max-w-[1100px] px-4 pb-10 pt-6 sm:px-7"
             style={{

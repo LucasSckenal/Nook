@@ -7,7 +7,7 @@ import { toast } from "@/lib/toast";
 import { audioUiTick } from "@/lib/audio";
 import type { Task } from "@/lib/types";
 
-export function TaskRow({ task }: { task: Task }) {
+export function TaskRow({ task, onDetail }: { task: Task; onDetail?: () => void }) {
   const subjects = useNook((s) => s.subjects);
   const toggleTask = useNook((s) => s.toggleTask);
   const removeTask = useNook((s) => s.removeTask);
@@ -59,6 +59,7 @@ export function TaskRow({ task }: { task: Task }) {
             ? "border-moss bg-moss/20 text-moss"
             : "border-ink-faint text-transparent hover:border-amber"
         }`}
+        style={!task.done && task.color ? { borderColor: task.color } : undefined}
       >
         <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
           <path
@@ -77,6 +78,16 @@ export function TaskRow({ task }: { task: Task }) {
         }`}
       >
         {task.title}
+        {task.recurring && (
+          <span className="ml-1.5 text-xs text-ink-low" title="repete toda semana">
+            ↻
+          </span>
+        )}
+        {task.notes && (
+          <span className="ml-1.5 text-xs text-ink-faint" title="tem anotações">
+            ≡
+          </span>
+        )}
       </span>
 
       {sub && (
@@ -105,6 +116,17 @@ export function TaskRow({ task }: { task: Task }) {
         >
           ▶ focar
         </Link>
+      )}
+
+      {onDetail && (
+        <button
+          onClick={onDetail}
+          title="Abrir detalhes"
+          aria-label="Abrir detalhes da tarefa"
+          className="shrink-0 rounded-(--radius-sm) px-1.5 py-0.5 text-xs text-ink-low opacity-0 transition-all hover:text-ink-high group-hover:opacity-100"
+        >
+          ⋯
+        </button>
       )}
 
       <button

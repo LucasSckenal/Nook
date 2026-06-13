@@ -3,17 +3,19 @@
 import Link from "next/link";
 import { useState } from "react";
 import { EmpathyMap } from "@/components/processo/EmpathyMap";
+import { HeuristicasTab } from "@/components/processo/Heuristicas";
 import { JourneyMap } from "@/components/processo/JourneyMap";
 import { StakeholderMatrix } from "@/components/processo/StakeholderMatrix";
 import { OBJETIVOS_INTERFACE } from "@/lib/processo";
 
-type Tab = "objetivos" | "stakeholders" | "empatia" | "jornada";
+type Tab = "objetivos" | "stakeholders" | "empatia" | "jornada" | "heuristicas";
 
 const TABS: { id: Tab; label: string }[] = [
   { id: "objetivos", label: "Objetivos" },
   { id: "stakeholders", label: "Stakeholders" },
   { id: "empatia", label: "Mapa de empatia" },
   { id: "jornada", label: "Jornada do usuário" },
+  { id: "heuristicas", label: "Avaliação heurística" },
 ];
 
 export default function ProcessoPage() {
@@ -76,6 +78,7 @@ export default function ProcessoPage() {
           {tab === "stakeholders" && <StakeholdersTab />}
           {tab === "empatia" && <EmpathyMap />}
           {tab === "jornada" && <JornadaTab />}
+          {tab === "heuristicas" && <HeuristicasTab />}
         </div>
       </main>
     </div>

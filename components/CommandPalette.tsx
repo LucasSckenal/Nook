@@ -52,6 +52,7 @@ export function CommandPalette({
       { id: "n-foco", label: "Iniciar sessão de foco", hint: "F", group: "Navegação", run: go("/?open=foco") },
       { id: "n-ajustes", label: "Abrir ajustes", hint: "tema · perfil", group: "Navegação", run: go("/ajustes") },
       { id: "n-proc", label: "Ver processo de design", hint: "Etapa 1", group: "Navegação", run: go("/processo") },
+      { id: "n-demo", label: "Preparar modo demonstração", hint: "reseta p/ apresentar", group: "Navegação", run: go("/demo") },
     ];
     const subItems: Item[] = subjects.map((s) => ({
       id: `s-${s.id}`,

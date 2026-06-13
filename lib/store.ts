@@ -30,6 +30,7 @@ interface NookState {
   theme: ThemeId;
   uiSounds: boolean;
   calmMotion: boolean;
+  geminiKey: string; // chave da API do Gemini (opcional) — Estuda com IA real
 
   // tarefas
   addTask: (t: { title: string; subjectId?: string; due?: string }) => void;
@@ -37,6 +38,7 @@ interface NookState {
   removeTask: (id: string) => void;
   restoreTask: (t: Task) => void;
   rescheduleTask: (id: string, due: string) => void;
+  updateTask: (id: string, patch: Partial<Omit<Task, "id">>) => void;
 
   // notas
   addNote: (n?: { subjectId?: string }) => string;
@@ -77,6 +79,7 @@ interface NookState {
   setTheme: (t: ThemeId) => void;
   setUiSounds: (v: boolean) => void;
   setCalmMotion: (v: boolean) => void;
+  setGeminiKey: (k: string) => void;
   resetDemo: () => void;
 }
 
@@ -96,6 +99,7 @@ export const useNook = create<NookState>()(
       theme: "meia-noite",
       uiSounds: true,
       calmMotion: false,
+      geminiKey: "",
       radio: {
         station: "lofi",
         playing: false,
@@ -114,12 +118,38 @@ export const useNook = create<NookState>()(
         })),
 
       toggleTask: (id) =>
-        set((s) => ({
-          tasks: s.tasks.map((t) =>
+        set((s) => {
+          const target = s.tasks.find((t) => t.id === id);
+          const completing = target && !target.done;
+          let tasks = s.tasks.map((t) =>
             t.id === id
               ? { ...t, done: !t.done, doneAt: !t.done ? todayIso() : undefined }
               : t
-          ),
+          );
+          // recorrência semanal: ao concluir, a tarefa renasce pra semana que vem
+          if (completing && target.recurring) {
+            const base = target.due ?? todayIso();
+            const d = new Date(`${base}T12:00:00`);
+            d.setDate(d.getDate() + 7);
+            const nextDue = d.toISOString().slice(0, 10);
+            tasks = [
+              {
+                ...target,
+                id: nextId(),
+                due: nextDue,
+                done: false,
+                doneAt: undefined,
+                createdAt: todayIso(),
+              },
+              ...tasks,
+            ];
+          }
+          return { tasks };
+        }),
+
+      updateTask: (id, patch) =>
+        set((s) => ({
+          tasks: s.tasks.map((t) => (t.id === id ? { ...t, ...patch } : t)),
         })),
 
       removeTask: (id) => set((s) => ({ tasks: s.tasks.filter((t) => t.id !== id) })),
@@ -238,6 +268,7 @@ export const useNook = create<NookState>()(
       setTheme: (theme) => set({ theme }),
       setUiSounds: (uiSounds) => set({ uiSounds }),
       setCalmMotion: (calmMotion) => set({ calmMotion }),
+      setGeminiKey: (geminiKey) => set({ geminiKey }),
 
       resetDemo: () =>
         set({

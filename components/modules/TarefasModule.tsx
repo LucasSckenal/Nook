@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { TaskDetail } from "@/components/TaskDetail";
 import { TaskRow } from "@/components/TaskRow";
 import { NotesPane } from "@/components/NotesPane";
 import { useMounted } from "@/components/useMounted";
@@ -18,6 +19,7 @@ export default function TarefasPage() {
 
   const [pane, setPane] = useState<"tarefas" | "anotacoes">("tarefas");
   const [filter, setFilter] = useState<Filter>("semana");
+  const [detailId, setDetailId] = useState<string | null>(null);
   const [title, setTitle] = useState("");
   const [subjectId, setSubjectId] = useState("");
   const [due, setDue] = useState("");
@@ -146,14 +148,20 @@ export default function TarefasPage() {
         ) : (
           <div className="space-y-0.5">
             {sorted.map((t) => (
-              <TaskRow key={t.id} task={t} />
+              <TaskRow
+                key={t.id}
+                task={t}
+                onDetail={() => setDetailId(detailId === t.id ? null : t.id)}
+              />
             ))}
           </div>
         )}
       </div>
 
+      {detailId && <TaskDetail taskId={detailId} onClose={() => setDetailId(null)} />}
+
       <p className="mt-4 text-center text-xs text-ink-low">
-        concluir é reversível — clique de novo na caixinha para reabrir
+        concluir é reversível — clique de novo na caixinha para reabrir · “⋯” abre detalhes, cor e repetição
       </p>
     </div>
   );

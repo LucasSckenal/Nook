@@ -62,9 +62,12 @@ export default function AjustesPage() {
   const setCalmMotion = useNook((s) => s.setCalmMotion);
   const rainVisual = useNook((s) => s.rainVisual);
   const setRainVisual = useNook((s) => s.setRainVisual);
+  const geminiKey = useNook((s) => s.geminiKey);
+  const setGeminiKey = useNook((s) => s.setGeminiKey);
   const resetDemo = useNook((s) => s.resetDemo);
 
   const [name, setName] = useState(userName);
+  const [keyDraft, setKeyDraft] = useState(geminiKey);
 
   return (
     <div className="min-h-screen bg-room">
@@ -172,8 +175,56 @@ export default function AjustesPage() {
               </div>
             </section>
 
-            {/* dados */}
+            {/* Estuda com IA real */}
             <section className="nk-card nk-reveal nk-reveal-3 p-6">
+              <h2 className="mb-1 font-display text-lg text-ink-high">🪻 Estuda com IA real</h2>
+              <p className="mb-4 text-xs leading-relaxed text-ink-low">
+                cole uma chave do <strong className="text-ink-mid">Google Gemini</strong> (gratuita em
+                aistudio.google.com/apikey) para a Estuda responder de verdade, com o contexto do seu
+                semestre. A chave fica só no seu navegador. Sem chave, ela funciona em modo local.
+              </p>
+              <div className="flex flex-wrap gap-2">
+                <input
+                  type="password"
+                  value={keyDraft}
+                  onChange={(e) => setKeyDraft(e.target.value)}
+                  placeholder="AIza…"
+                  className="min-w-[220px] flex-1 rounded-(--radius-sm) bg-raised px-4 py-2.5 font-mono text-sm text-ink-high placeholder:text-ink-low focus:outline-none"
+                  aria-label="Chave da API do Gemini"
+                />
+                <button
+                  onClick={() => {
+                    setGeminiKey(keyDraft.trim());
+                    toast({ message: keyDraft.trim() ? "Estuda ligada à IA. 🪻" : "Chave removida — modo local." });
+                  }}
+                  className="rounded-(--radius-sm) bg-amber px-4 py-2.5 text-sm font-medium text-void transition-opacity hover:opacity-90"
+                >
+                  salvar chave
+                </button>
+                {geminiKey && (
+                  <button
+                    onClick={() => {
+                      setGeminiKey("");
+                      setKeyDraft("");
+                      toast({ message: "Chave removida — modo local." });
+                    }}
+                    className="rounded-(--radius-sm) bg-surface px-4 py-2.5 text-sm text-ink-mid shadow-[0_0_0_1px_#ffffff0a] transition-colors hover:text-ink-high"
+                  >
+                    remover
+                  </button>
+                )}
+              </div>
+              <p className="mt-3 text-xs">
+                {geminiKey ? (
+                  <span className="text-moss">● conectada — a Estuda já está usando o Gemini</span>
+                ) : (
+                  <span className="text-ink-low">○ desconectada — Estuda em modo local (roteiro)</span>
+                )}
+              </p>
+            </section>
+
+            {/* dados */}
+            <section className="nk-card nk-reveal nk-reveal-4 p-6">
               <h2 className="mb-1 font-display text-lg text-ink-high">Dados</h2>
               <p className="mb-4 text-xs text-ink-low">
                 tudo é salvo localmente no seu navegador — baixe um backup de vez em

@@ -305,6 +305,53 @@ export function audioStopAll() {
   audioSetRainLayer(false, 0);
 }
 
+/* ── o gato ronrona ────────────────────────────────────────────────── */
+
+let purrStop: (() => void) | null = null;
+
+/** começa o ronronar (enquanto a mão está no gato) */
+export function audioPurrStart() {
+  if (purrStop) return;
+  const ac = ensureCtx();
+  const t = ac.currentTime;
+
+  // rumor grave + tremolo na frequência do ronron (~24Hz)
+  const src = noiseSource(ac, "brown");
+  const lp = ac.createBiquadFilter();
+  lp.type = "lowpass";
+  lp.frequency.value = 150;
+  const trem = ac.createGain();
+  trem.gain.value = 0.5;
+  const lfo = ac.createOscillator();
+  lfo.frequency.value = 24;
+  const lfoDepth = ac.createGain();
+  lfoDepth.gain.value = 0.45;
+  lfo.connect(lfoDepth).connect(trem.gain);
+
+  const out = ac.createGain();
+  out.gain.setValueAtTime(0.0001, t);
+  out.gain.exponentialRampToValueAtTime(0.22, t + 0.4);
+
+  src.connect(lp).connect(trem).connect(out).connect(ac.destination);
+  src.start(t);
+  lfo.start(t);
+
+  purrStop = () => {
+    const now = ac.currentTime;
+    out.gain.setTargetAtTime(0.0001, now, 0.12);
+    window.setTimeout(() => {
+      src.stop();
+      lfo.stop();
+    }, 500);
+  };
+}
+
+/** a mão saiu — o gato volta a dormir */
+export function audioPurrStop() {
+  purrStop?.();
+  purrStop = null;
+}
+
 /** som curtíssimo de UI: grafite riscando o papel ao concluir tarefa */
 export function audioUiTick() {
   const ac = ensureCtx();
