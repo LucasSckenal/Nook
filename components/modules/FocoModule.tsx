@@ -2,10 +2,13 @@
 
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useMounted } from "@/components/useMounted";
 import { useNook } from "@/lib/store";
+import { iso, minutesToHuman, startOfWeek, todayIso } from "@/lib/dates";
 import type { Mood } from "@/lib/types";
+
+const MOOD_EMOJI: Record<Mood, string> = { leve: "🌤", ok: "⛅", pesado: "🌧" };
 
 type Phase = "setup" | "sessao" | "pausa" | "fim";
 
@@ -26,12 +29,30 @@ export default function FocoModule() {
 
   const tasks = useNook((s) => s.tasks);
   const subjects = useNook((s) => s.subjects);
+  const sessions = useNook((s) => s.sessions);
   const addSession = useNook((s) => s.addSession);
   const toggleTask = useNook((s) => s.toggleTask);
   const radio = useNook((s) => s.radio);
   const setRadio = useNook((s) => s.setRadio);
 
   const linkedTask = tasks.find((t) => t.id === params.get("task"));
+
+  // histórico real: o foco se lembra do que você já fez
+  const history = useMemo(() => {
+    const today = todayIso();
+    const weekStart = iso(startOfWeek(new Date()));
+    let todayMin = 0;
+    let weekMin = 0;
+    for (const s of sessions) {
+      if (s.date === today) todayMin += s.minutes;
+      if (s.date >= weekStart) weekMin += s.minutes;
+    }
+    const recent = [...sessions]
+      .reverse()
+      .sort((a, b) => b.date.localeCompare(a.date))
+      .slice(0, 4);
+    return { todayMin, weekMin, recent };
+  }, [sessions]);
 
   const [phase, setPhase] = useState<Phase>("setup");
   const [duration, setDuration] = useState<number | null>(25); // null = livre
@@ -89,9 +110,27 @@ export default function FocoModule() {
           <h1 className="mb-1 text-center font-display text-3xl text-ink-high">
             Sessão de foco
           </h1>
-          <p className="mb-8 text-center text-sm text-ink-mid">
+          <p className="mb-5 text-center text-sm text-ink-mid">
             uma coisa de cada vez — o resto do quarto espera
           </p>
+
+          {/* histórico real: quanto você já focou */}
+          {history.weekMin > 0 && (
+            <div className="mb-7 flex justify-center gap-2 text-center">
+              <div className="flex-1 rounded-(--radius-md) bg-surface px-3 py-2">
+                <p className="font-display text-lg text-amber">
+                  {history.todayMin > 0 ? minutesToHuman(history.todayMin) : "—"}
+                </p>
+                <p className="text-[11px] text-ink-low">hoje</p>
+              </div>
+              <div className="flex-1 rounded-(--radius-md) bg-surface px-3 py-2">
+                <p className="font-display text-lg text-ink-high">
+                  {minutesToHuman(history.weekMin)}
+                </p>
+                <p className="text-[11px] text-ink-low">esta semana</p>
+              </div>
+            </div>
+          )}
 
           <label className="mb-2 block text-xs text-ink-low">no que vamos focar?</label>
           <input
@@ -163,6 +202,39 @@ export default function FocoModule() {
           >
             voltar ao quarto
           </Link>
+
+          {/* últimas sessões — o ciclo foco → histórico, visível aqui */}
+          {history.recent.length > 0 && (
+            <div className="mt-8 border-t border-ink-faint/20 pt-5">
+              <p className="mb-3 text-xs text-ink-low">últimas sessões</p>
+              <div className="space-y-1.5">
+                {history.recent.map((s) => {
+                  const sub = subjects.find((x) => x.id === s.subjectId);
+                  return (
+                    <div key={s.id} className="flex items-center gap-2.5 text-sm">
+                      <span className="shrink-0" aria-hidden>
+                        {s.mood ? MOOD_EMOJI[s.mood] : "🕯"}
+                      </span>
+                      <span className="tabular-nums text-ink-mid">
+                        {minutesToHuman(s.minutes)}
+                      </span>
+                      <span className="truncate text-ink-high">
+                        {s.goal || (sub ? sub.name : "estudo livre")}
+                      </span>
+                      {sub && (
+                        <span
+                          className="ml-auto shrink-0 rounded-full px-2 py-0.5 text-[10px]"
+                          style={{ background: `${sub.color}22`, color: sub.color }}
+                        >
+                          {sub.name}
+                        </span>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
         </div>
       )}
 

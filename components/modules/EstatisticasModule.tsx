@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useMemo } from "react";
 import { useMounted } from "@/components/useMounted";
 import {
@@ -72,6 +73,29 @@ export default function EstatisticasPage() {
   };
 
   if (!mounted) return <div className="nk-skeleton h-[60vh] w-full" />;
+
+  // ainda não estudou nada por aqui — a caneca não tem folhas para segurar
+  if (sessions.length === 0) {
+    return (
+      <div className="mx-auto max-w-[560px] py-16 text-center">
+        <p className="mb-3 text-4xl" aria-hidden>☕</p>
+        <h2 className="font-display text-xl text-ink-high">
+          A caneca ainda não tem folhas para segurar.
+        </h2>
+        <p className="mx-auto mt-3 max-w-[440px] text-sm leading-relaxed text-ink-mid">
+          Aqui vão aparecer suas horas de estudo, o equilíbrio entre as disciplinas
+          e a sua constância — tudo a partir das suas sessões de foco. Faça a
+          primeira e volte para ver o esforço tomar forma.
+        </p>
+        <Link
+          href="/?open=foco"
+          className="mt-7 inline-block rounded-(--radius-md) bg-amber px-5 py-3 text-sm font-medium text-void shadow-[0_0_32px_#e8a87c30] transition-transform hover:scale-[1.02]"
+        >
+          começar uma sessão de foco
+        </Link>
+      </div>
+    );
+  }
 
   return (
     <div className="mx-auto max-w-[900px]">

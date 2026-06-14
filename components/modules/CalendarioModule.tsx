@@ -1,10 +1,12 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import { TaskRow } from "@/components/TaskRow";
 import { useMounted } from "@/components/useMounted";
 import { fromIso, iso, startOfWeek, todayIso } from "@/lib/dates";
 import { useNook } from "@/lib/store";
+import { toast } from "@/lib/toast";
 
 const MESES = [
   "janeiro", "fevereiro", "março", "abril", "maio", "junho",
@@ -14,10 +16,14 @@ const DIAS = ["seg", "ter", "qua", "qui", "sex", "sáb", "dom"];
 
 export default function CalendarioPage() {
   const mounted = useMounted();
+  const router = useRouter();
   const subjects = useNook((s) => s.subjects);
   const tasks = useNook((s) => s.tasks);
+  const addTask = useNook((s) => s.addTask);
   const [offset, setOffset] = useState(0); // meses a partir do atual
   const [selected, setSelected] = useState<string | null>(null);
+  const [quickTitle, setQuickTitle] = useState("");
+  const [quickSubject, setQuickSubject] = useState("");
 
   const today = todayIso();
 
@@ -40,7 +46,13 @@ export default function CalendarioPage() {
       string,
       {
         aulas: { color: string; name: string; start: string; end: string; room?: string }[];
-        provas: { color: string; title: string; kind: "prova" | "trabalho"; subject: string }[];
+        provas: {
+          color: string;
+          title: string;
+          kind: "prova" | "trabalho";
+          subjectId: string;
+          subjectName: string;
+        }[];
         tarefas: number;
       }
     >();
@@ -61,7 +73,13 @@ export default function CalendarioPage() {
     for (const s of subjects) {
       for (const a of s.assessments) {
         if (inView.has(a.date)) {
-          get(a.date).provas.push({ color: s.color, title: a.title, kind: a.kind, subject: s.name });
+          get(a.date).provas.push({
+            color: s.color,
+            title: a.title,
+            kind: a.kind,
+            subjectId: s.id,
+            subjectName: s.name,
+          });
         }
       }
     }
@@ -212,22 +230,85 @@ export default function CalendarioPage() {
                   </p>
                 ))}
               {selectedInfo?.provas.map((p, i) => (
-                <p key={i} className="flex items-center gap-2.5 text-sm">
-                  <span style={{ color: p.color }}>{p.kind === "prova" ? "◉" : "◍"}</span>
-                  <span className="text-ink-high">{p.title}</span>
-                  <span className="text-xs text-ink-low">{p.subject}</span>
-                </p>
+                <div key={i} className="flex items-center gap-2 text-sm">
+                  <button
+                    onClick={() => router.push(`/?open=disciplinas&id=${p.subjectId}`)}
+                    className="flex items-center gap-2.5 text-left transition-colors hover:text-amber"
+                    title={`Abrir ${p.subjectName}`}
+                  >
+                    <span style={{ color: p.color }}>{p.kind === "prova" ? "◉" : "◍"}</span>
+                    <span className="text-ink-high">{p.title}</span>
+                    <span className="text-xs text-ink-low">{p.subjectName}</span>
+                  </button>
+                  <button
+                    onClick={() => {
+                      addTask({
+                        title: `Estudar para ${p.title}`,
+                        subjectId: p.subjectId,
+                        due: selected!,
+                      });
+                      toast({ message: "Tarefa de estudo criada. 🌱" });
+                    }}
+                    className="ml-auto shrink-0 rounded-(--radius-sm) bg-surface px-2 py-1 text-xs text-ink-mid shadow-[0_0_0_1px_#ffffff0a] transition-colors hover:text-amber"
+                    title="Criar tarefa de estudo para esta avaliação"
+                  >
+                    + estudar
+                  </button>
+                </div>
               ))}
               {!selectedInfo?.aulas.length && !selectedInfo?.provas.length && (
                 <p className="text-sm text-ink-low">sem aulas nem avaliações — dia leve 🌿</p>
               )}
             </div>
-            <div className="space-y-0.5">
-              {selectedTasks.length > 0 ? (
-                selectedTasks.map((t) => <TaskRow key={t.id} task={t} />)
-              ) : (
-                <p className="text-sm text-ink-low">nenhuma tarefa com prazo neste dia</p>
-              )}
+            <div className="space-y-2">
+              <div className="space-y-0.5">
+                {selectedTasks.length > 0 ? (
+                  selectedTasks.map((t) => <TaskRow key={t.id} task={t} />)
+                ) : (
+                  <p className="text-sm text-ink-low">nenhuma tarefa com prazo neste dia</p>
+                )}
+              </div>
+              {/* criar tarefa direto no dia escolhido */}
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  if (!quickTitle.trim()) return;
+                  addTask({
+                    title: quickTitle.trim(),
+                    subjectId: quickSubject || undefined,
+                    due: selected!,
+                  });
+                  setQuickTitle("");
+                  toast({ message: "Tarefa adicionada a este dia. ✓" });
+                }}
+                className="flex flex-wrap items-center gap-2 rounded-(--radius-md) bg-surface/60 p-2"
+              >
+                <input
+                  value={quickTitle}
+                  onChange={(e) => setQuickTitle(e.target.value)}
+                  placeholder="+ tarefa neste dia"
+                  className="min-w-[120px] flex-1 rounded-(--radius-sm) bg-transparent px-2 py-1.5 text-sm text-ink-high placeholder:text-ink-low focus:outline-none"
+                />
+                <select
+                  value={quickSubject}
+                  onChange={(e) => setQuickSubject(e.target.value)}
+                  className="rounded-(--radius-sm) bg-raised px-2 py-1.5 text-xs text-ink-mid focus:outline-none"
+                >
+                  <option value="">sem disciplina</option>
+                  {subjects.map((s) => (
+                    <option key={s.id} value={s.id}>
+                      {s.name}
+                    </option>
+                  ))}
+                </select>
+                <button
+                  type="submit"
+                  disabled={!quickTitle.trim()}
+                  className="rounded-(--radius-sm) bg-amber px-3 py-1.5 text-xs font-medium text-void disabled:opacity-40"
+                >
+                  add
+                </button>
+              </form>
             </div>
           </div>
         </div>

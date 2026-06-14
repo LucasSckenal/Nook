@@ -81,6 +81,37 @@ interface NookState {
   setCalmMotion: (v: boolean) => void;
   setGeminiKey: (k: string) => void;
   resetDemo: () => void;
+
+  /** substitui os dados do semestre (vindos da nuvem) sem tocar nas prefs locais */
+  hydrate: (data: Partial<SyncSlice>) => void;
+}
+
+/** o que mora na nuvem (Firestore) — o resto é preferência do aparelho */
+export interface SyncSlice {
+  subjects: Subject[];
+  tasks: Task[];
+  sessions: FocusSession[];
+  notes: Note[];
+  userName: string;
+}
+
+export const SYNC_KEYS: (keyof SyncSlice)[] = [
+  "subjects",
+  "tasks",
+  "sessions",
+  "notes",
+  "userName",
+];
+
+/** extrai só a fatia sincronizável do estado */
+export function syncSlice(s: SyncSlice): SyncSlice {
+  return {
+    subjects: s.subjects,
+    tasks: s.tasks,
+    sessions: s.sessions,
+    notes: s.notes,
+    userName: s.userName,
+  };
 }
 
 const nextId = () =>
@@ -277,6 +308,8 @@ export const useNook = create<NookState>()(
           sessions: seedSessions(),
           notes: seedNotes(),
         }),
+
+      hydrate: (data) => set((s) => ({ ...s, ...data })),
     }),
     {
       name: "nook-v1",

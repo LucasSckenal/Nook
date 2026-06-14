@@ -29,6 +29,7 @@ const ZOOM_POINT: Record<ModuleKey, { x: number; y: number }> = {
   radio: { x: 12, y: 50 },
   estatisticas: { x: 71, y: 70 },
   foco: { x: 31, y: 52 },
+  ajustes: { x: 8, y: 30 },
 };
 
 interface SceneObject {
@@ -49,9 +50,10 @@ const OBJECTS: SceneObject[] = [
   { key: "disciplinas", src: "/Objetos/Estante.png", label: "📚 Estante", left: 79.1, top: 0.6, width: 22, glow: "#9caf88", z: 6 },
   { key: "radio", src: "/Objetos/Radio.png", label: "📻 Rádio", left: 4.5, top: 42.9, width: 16, glow: "#c9a06a", z: 10 },
   { key: "dashboard", src: "/Objetos/Notebook.png", label: "💻 Computador", left: 36.9, top: 37.2, width: 23.6, glow: "#8fa8bf", z: 11 },
-  { key: "foco", src: "/Objetos/Cafe.png", label: "🎯 Modo foco", left: 26.5, top: 46.5, width: 8, glow: "#e8a87c", z: 13 },
+  { key: "foco", src: "/Objetos/Cafe.png", label: "🎯 Modo foco", left: 23.1, top: 54.3, width: 8, glow: "#e8a87c", z: 13 },
   { key: "estatisticas", src: "/Objetos/Agenda.png", label: "📊 Estatísticas", left: 61.9, top: 59.7, width: 18, glow: "#c97b63", z: 12 },
   { key: "tarefas", src: "/Objetos/Caderno.png", label: "📝 Caderno", left: 33.7, top: 61.6, width: 24.2, glow: "#e8a87c", z: 14 },
+  { key: "ajustes", src: "/Objetos/Luminaria.png", label: "💡 Ajustes", left: 1, top: 14, width: 14, glow: "#e8c98a", z: 8 },
 ];
 
 /** área dos post-its de aviso (% do palco) — arraste no modo ?edit=1 */
@@ -194,12 +196,12 @@ export function RoomSceneObjects({
         draggable={false}
       />
 
-      {/* palco 3:2 cobrindo a viewport */}
+      {/* palco 3:2. No desktop cobre a viewport (cover); no mobile mostra o
+          quarto INTEIRO (largura toda), como um quadro, com o fundo borrado
+          preenchendo o resto — todos os objetos visíveis e tocáveis. */}
       <div
-        className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"
+        className="absolute left-1/2 top-1/2 aspect-[3/2] w-[max(100vw,150vh)] -translate-x-1/2 -translate-y-1/2 max-[640px]:w-screen"
         style={{
-          width: "max(100vw, 150vh)",
-          aspectRatio: "3 / 2",
           filter: lit || edit ? "brightness(1)" : "brightness(0.05)",
           transition: "filter 1300ms var(--nk-ease-ui) 250ms",
         }}

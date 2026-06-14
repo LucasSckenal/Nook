@@ -3,48 +3,52 @@
 import { useState } from "react";
 import { useNook } from "@/lib/store";
 import { greeting } from "@/lib/dates";
+import { MODULE_ORIGIN, type ModuleKey } from "./room/ModuleOverlay";
 
 /**
  * Onboarding diegético: o próprio quarto ensina. Depois das boas-vindas,
  * um holofote acende sobre cada objeto real da cena (que continua visível
  * atrás) — nada de modal listando ícones.
+ *
+ * O centro de cada holofote vem de MODULE_ORIGIN — a MESMA fonte que a câmera
+ * usa para mergulhar no objeto — então o tour nunca sai de sincronia com a
+ * cena, mesmo que os objetos sejam reposicionados.
  */
 
 interface TourStop {
-  x: number; // centro do holofote, % da caixa 3:2 da cena
-  y: number;
+  key: ModuleKey; // de onde vem o centro do holofote (MODULE_ORIGIN)
   r: number; // raio do holofote (px)
   title: string;
   text: string;
-  // posição do balão (% da caixa)
+  // posição do balão (% da caixa) — mantido perto do centro p/ caber em telas estreitas
   bx: number;
   by: number;
 }
 
 const TOUR: TourStop[] = [
   {
-    x: 50, y: 50, r: 230,
+    key: "dashboard", r: 210,
     title: "💻 O computador",
     text: "Seu dia em uma tela: aulas, prazos e a Estuda — a assistente que conhece o seu semestre.",
-    bx: 50, by: 80,
+    bx: 50, by: 76,
   },
   {
-    x: 23, y: 62, r: 150,
+    key: "tarefas", r: 190,
     title: "📝 O caderno",
     text: "Tarefas e anotações moram aqui. Concluir é reversível — tudo tem desfazer.",
-    bx: 26, by: 26,
+    bx: 50, by: 30,
   },
   {
-    x: 87, y: 40, r: 210,
+    key: "disciplinas", r: 175,
     title: "📚 A estante",
     text: "Cada lombada é uma disciplina. Notas, provas e a média que você precisa.",
-    bx: 56, by: 40,
+    bx: 55, by: 52,
   },
   {
-    x: 9, y: 62, r: 150,
-    title: "🎯 A luminária",
-    text: "Toque nela para uma sessão de foco: a luz do quarto apaga e só o relógio fica.",
-    bx: 34, by: 58,
+    key: "foco", r: 130,
+    title: "☕ O café",
+    text: "Toque na caneca para uma sessão de foco: a luz do quarto apaga e só o relógio fica.",
+    bx: 48, by: 24,
   },
 ];
 
@@ -66,21 +70,20 @@ export function Onboarding() {
 
   const tourIdx = step - 2;
   const stop = TOUR[tourIdx];
+  const origin = stop ? MODULE_ORIGIN[stop.key] : null;
 
   /* ── tour: holofotes sobre o quarto real ─────────────────────────── */
-  if (stop) {
+  if (stop && origin) {
     return (
       <div className="fixed inset-0 z-[60]">
-        {/* a caixa 3:2 da cena, replicada para mirar os objetos */}
-        <div
-          className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"
-          style={{ width: "max(100vw, 150vh)", aspectRatio: "3 / 2" }}
-        >
+        {/* a caixa 3:2 da cena, replicada para mirar os objetos — segue o mesmo
+            enquadramento da cena (cover no desktop, quarto inteiro no mobile) */}
+        <div className="absolute left-1/2 top-1/2 aspect-[3/2] w-[max(100vw,150vh)] -translate-x-1/2 -translate-y-1/2 max-[640px]:w-screen">
           {/* escuridão com o buraco do holofote (sombra gigante cobre o resto) */}
           <div
             className="absolute inset-0"
             style={{
-              background: `radial-gradient(circle ${stop.r}px at ${stop.x}% ${stop.y}%, transparent ${Math.round(stop.r * 0.62)}px, #04060ae0 ${stop.r}px)`,
+              background: `radial-gradient(circle ${stop.r}px at ${origin.x}% ${origin.y}%, transparent ${Math.round(stop.r * 0.62)}px, #04060ae0 ${stop.r}px)`,
               boxShadow: "0 0 0 100vmax #04060ae0",
               transition: "background 600ms var(--nk-ease-ui)",
             }}
@@ -90,8 +93,8 @@ export function Onboarding() {
           <div
             className="absolute -translate-x-1/2 -translate-y-1/2 rounded-full"
             style={{
-              left: `${stop.x}%`,
-              top: `${stop.y}%`,
+              left: `${origin.x}%`,
+              top: `${origin.y}%`,
               width: stop.r * 1.25,
               height: stop.r * 1.25,
               boxShadow: "0 0 0 1.5px #e8a87c55, 0 0 50px 8px #e8a87c22",
@@ -149,9 +152,23 @@ export function Onboarding() {
   return (
     <div
       className="fixed inset-0 z-[60] flex items-center justify-center p-6"
-      style={{ background: "#04060ab8", backdropFilter: "blur(6px)" }}
+      style={{
+        background:
+          "radial-gradient(ellipse 60% 55% at 50% 45%, #04060a55, #04060ac4 80%)",
+        backdropFilter: "blur(5px)",
+        WebkitBackdropFilter: "blur(5px)",
+      }}
     >
-      <div className="nk-raised w-[min(520px,94vw)] p-8 sm:p-10">
+      <div
+        className="w-[min(520px,94vw)] rounded-(--radius-lg) p-8 sm:p-10"
+        style={{
+          background: "color-mix(in srgb, var(--color-room) 82%, transparent)",
+          backdropFilter: "blur(20px) saturate(1.15)",
+          WebkitBackdropFilter: "blur(20px) saturate(1.15)",
+          boxShadow:
+            "0 32px 90px #00000080, 0 0 0 1px #ffffff14, inset 0 1px 0 #ffffff0f",
+        }}
+      >
         <div className="mb-8 flex items-center justify-between">
           <div className="flex gap-1.5">
             {[0, 1].map((i) => (

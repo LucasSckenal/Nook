@@ -10,6 +10,7 @@ import {
   type ModuleKey,
 } from "./ModuleOverlay";
 import { useMounted } from "@/components/useMounted";
+import { SyncIndicator } from "@/components/auth/SyncIndicator";
 import { useNook } from "@/lib/store";
 import { daysBetween, greeting, relativeDay, todayIso } from "@/lib/dates";
 import { toast } from "@/lib/toast";
@@ -22,6 +23,7 @@ const KEYS: ModuleKey[] = [
   "radio",
   "estatisticas",
   "foco",
+  "ajustes",
 ];
 
 function isModuleKey(v: string | null): v is ModuleKey {
@@ -198,14 +200,25 @@ export function RoomShell() {
           )}
         </div>
         <div className="pointer-events-auto flex items-center gap-3 text-xs text-ink-low">
+          <SyncIndicator />
           <span className="hidden items-center gap-2 sm:flex">
             <kbd className="rounded-md bg-surface px-2 py-1 shadow-[0_0_0_1px_#ffffff10]">
               Ctrl K
             </kbd>
             buscar · criar · navegar
           </span>
+          <button
+            onClick={() =>
+              window.dispatchEvent(new KeyboardEvent("keydown", { key: "?", bubbles: true }))
+            }
+            aria-label="Atalhos de teclado"
+            title="Atalhos (?)"
+            className="rounded-md px-2 py-1 text-sm text-ink-low transition-colors hover:text-amber"
+          >
+            ?
+          </button>
           <Link
-            href="/ajustes"
+            href="/?open=ajustes"
             aria-label="Ajustes"
             title="Ajustes"
             className="rounded-md px-1.5 py-1 text-base transition-colors hover:text-amber"
@@ -225,14 +238,14 @@ export function RoomShell() {
           transition: "opacity 300ms var(--nk-ease-ui)",
         }}
       >
-        <div className="flex items-center gap-1 rounded-(--radius-lg) bg-raised/85 px-3 py-2 opacity-75 shadow-[0_8px_32px_#00000040,0_0_0_1px_#ffffff0a] backdrop-blur-xl transition-opacity duration-(--nk-dur-quick) hover:opacity-100">
+        <div className="flex max-w-[calc(100vw-1.5rem)] items-center gap-1 overflow-x-auto rounded-(--radius-lg) bg-raised/85 px-3 py-2 opacity-75 shadow-[0_8px_32px_#00000040,0_0_0_1px_#ffffff0a] backdrop-blur-xl transition-opacity duration-(--nk-dur-quick) [scrollbar-width:none] hover:opacity-100 [&::-webkit-scrollbar]:hidden">
           {QUICK_NAV.map((it) => (
             <Link
               key={it.href}
               href={it.href}
               title={it.label}
               aria-label={it.label}
-              className="group relative flex h-11 w-11 items-center justify-center rounded-(--radius-md) transition-all duration-(--nk-dur-instant) hover:-translate-y-0.5 hover:bg-surface"
+              className="group relative flex h-9 w-9 shrink-0 items-center justify-center rounded-(--radius-md) transition-all duration-(--nk-dur-instant) hover:-translate-y-0.5 hover:bg-surface sm:h-11 sm:w-11"
             >
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
@@ -240,7 +253,7 @@ export function RoomShell() {
                 alt=""
                 aria-hidden
                 draggable={false}
-                className="h-9 w-9 select-none rounded-[9px] object-contain transition-transform duration-(--nk-dur-instant) group-hover:scale-110"
+                className="h-7 w-7 select-none rounded-[9px] object-contain transition-transform duration-(--nk-dur-instant) group-hover:scale-110 sm:h-9 sm:w-9"
               />
               <span className="pointer-events-none absolute -top-9 whitespace-nowrap rounded-md bg-raised px-2 py-1 text-xs text-ink-mid opacity-0 shadow-[0_0_0_1px_#ffffff0a] transition-opacity group-hover:opacity-100">
                 {it.label}

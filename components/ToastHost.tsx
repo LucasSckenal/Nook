@@ -8,7 +8,12 @@ export function ToastHost() {
   const dismiss = useToasts((s) => s.dismiss);
 
   return (
-    <div className="pointer-events-none fixed bottom-4 left-4 z-50 flex w-[min(340px,calc(100vw-2rem))] flex-col gap-2">
+    <div
+      className="pointer-events-none fixed bottom-4 left-4 z-50 flex w-[min(340px,calc(100vw-2rem))] flex-col gap-2"
+      role="status"
+      aria-live="polite"
+      aria-atomic="false"
+    >
       {toasts.map((t) => (
         <div
           key={t.id}

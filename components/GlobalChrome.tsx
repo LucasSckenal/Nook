@@ -5,6 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { CommandPalette } from "./CommandPalette";
 import { ToastHost } from "./ToastHost";
 import { Onboarding } from "./Onboarding";
+import { ShortcutsHelp } from "./ShortcutsHelp";
 import { useMounted } from "./useMounted";
 import { useNook } from "@/lib/store";
 import {
@@ -90,6 +91,7 @@ export function GlobalChrome() {
   const pathname = usePathname();
   const mounted = useMounted();
   const [paletteOpen, setPaletteOpen] = useState(false);
+  const [helpOpen, setHelpOpen] = useState(false);
   const chord = useRef<{ key: string; at: number } | null>(null);
 
   useEffect(() => {
@@ -99,7 +101,18 @@ export function GlobalChrome() {
         setPaletteOpen((v) => !v);
         return;
       }
-      if (isTyping() || paletteOpen) return;
+      // ajuda de atalhos (Nielsen #7/#10): "?" abre, Esc fecha
+      if (helpOpen && e.key === "Escape") {
+        e.preventDefault();
+        setHelpOpen(false);
+        return;
+      }
+      if (isTyping() || paletteOpen || helpOpen) return;
+      if (e.key === "?") {
+        e.preventDefault();
+        setHelpOpen(true);
+        return;
+      }
 
       const k = e.key.toLowerCase();
       const now = Date.now();
@@ -139,7 +152,7 @@ export function GlobalChrome() {
     }
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [router, pathname, paletteOpen]);
+  }, [router, pathname, paletteOpen, helpOpen]);
 
   return (
     <>
@@ -147,6 +160,7 @@ export function GlobalChrome() {
       <RadioSync />
       <ToastHost />
       <CommandPalette open={paletteOpen} onClose={() => setPaletteOpen(false)} />
+      <ShortcutsHelp open={helpOpen} onClose={() => setHelpOpen(false)} />
       {mounted && pathname === "/" && <Onboarding />}
     </>
   );

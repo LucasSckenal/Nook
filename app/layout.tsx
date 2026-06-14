@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { Fraunces, Inter, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import { GlobalChrome } from "@/components/GlobalChrome";
+import { AuthProvider } from "@/components/auth/AuthProvider";
+import { FirestoreSync } from "@/components/auth/FirestoreSync";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
 const fraunces = Fraunces({
@@ -28,8 +30,11 @@ export default function RootLayout({
       <body
         className={`${inter.variable} ${fraunces.variable} ${jetbrains.variable} min-h-screen`}
       >
-        {children}
-        <GlobalChrome />
+        <AuthProvider>
+          <FirestoreSync />
+          {children}
+          <GlobalChrome />
+        </AuthProvider>
       </body>
     </html>
   );

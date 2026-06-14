@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useNook } from "@/lib/store";
 import { addDaysIso, relativeDay } from "@/lib/dates";
+import { useFocusTrap } from "./useFocusTrap";
 
 interface Item {
   id: string;
@@ -24,6 +25,8 @@ export function CommandPalette({
   const [query, setQuery] = useState("");
   const [active, setActive] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
+  const trapRef = useRef<HTMLDivElement>(null);
+  useFocusTrap(trapRef, open);
   const subjects = useNook((s) => s.subjects);
   const tasks = useNook((s) => s.tasks);
   const addTask = useNook((s) => s.addTask);
@@ -50,7 +53,7 @@ export function CommandPalette({
       { id: "n-rad", label: "Abrir rádio", hint: "G R", group: "Navegação", run: go("/?open=radio") },
       { id: "n-est", label: "Abrir estatísticas", hint: "G S", group: "Navegação", run: go("/?open=estatisticas") },
       { id: "n-foco", label: "Iniciar sessão de foco", hint: "F", group: "Navegação", run: go("/?open=foco") },
-      { id: "n-ajustes", label: "Abrir ajustes", hint: "tema · perfil", group: "Navegação", run: go("/ajustes") },
+      { id: "n-ajustes", label: "Abrir ajustes", hint: "tema · perfil", group: "Navegação", run: go("/?open=ajustes") },
       { id: "n-proc", label: "Ver processo de design", hint: "Etapa 1", group: "Navegação", run: go("/processo") },
       { id: "n-demo", label: "Preparar modo demonstração", hint: "reseta p/ apresentar", group: "Navegação", run: go("/demo") },
     ];
@@ -114,6 +117,10 @@ export function CommandPalette({
       onClick={onClose}
     >
       <div
+        ref={trapRef}
+        role="dialog"
+        aria-modal="true"
+        aria-label="Buscar e navegar"
         className="nk-raised w-[min(560px,92vw)] overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >

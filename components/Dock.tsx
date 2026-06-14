@@ -49,7 +49,7 @@ export function Dock({
 
   return (
     <div className="pointer-events-none fixed inset-x-0 bottom-0 z-40 flex justify-center pb-3">
-      <div className="pointer-events-auto flex items-center gap-1 rounded-(--radius-lg) bg-raised/90 px-3 py-2 opacity-60 shadow-[0_8px_32px_#00000040,0_0_0_1px_#ffffff0a] backdrop-blur-xl transition-opacity duration-(--nk-dur-quick) hover:opacity-100">
+      <div className="pointer-events-auto flex max-w-[calc(100vw-1.5rem)] items-center gap-1 overflow-x-auto rounded-(--radius-lg) bg-raised/90 px-3 py-2 opacity-60 shadow-[0_8px_32px_#00000040,0_0_0_1px_#ffffff0a] backdrop-blur-xl transition-opacity duration-(--nk-dur-quick) [scrollbar-width:none] hover:opacity-100 [&::-webkit-scrollbar]:hidden">
         {ITEMS.map((item) => {
           const active = item.kind === "module" && item.key === activeKey;
           const go = () => {
@@ -62,7 +62,7 @@ export function Dock({
               key={item.kind === "route" ? item.href : item.key}
               onClick={go}
               title={item.label}
-              className={`group relative flex h-11 w-11 items-center justify-center rounded-(--radius-md) transition-all duration-(--nk-dur-instant) hover:-translate-y-0.5 hover:bg-surface ${
+              className={`group relative flex h-9 w-9 shrink-0 items-center justify-center rounded-(--radius-md) transition-all duration-(--nk-dur-instant) hover:-translate-y-0.5 hover:bg-surface sm:h-11 sm:w-11 ${
                 active ? "bg-surface" : ""
               }`}
             >
@@ -71,7 +71,7 @@ export function Dock({
                 alt=""
                 aria-hidden
                 draggable={false}
-                className="h-9 w-9 select-none rounded-[9px] object-contain transition-transform duration-(--nk-dur-instant) group-hover:scale-110"
+                className="h-7 w-7 select-none rounded-[9px] object-contain transition-transform duration-(--nk-dur-instant) group-hover:scale-110 sm:h-9 sm:w-9"
               />
               {active && (
                 <span className="absolute -bottom-1 h-1 w-1 rounded-full bg-amber" />

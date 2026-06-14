@@ -11,6 +11,7 @@ import DisciplinasPage from "@/components/modules/DisciplinasModule";
 import RadioPage from "@/components/modules/RadioModule";
 import EstatisticasPage from "@/components/modules/EstatisticasModule";
 import FocoModule from "@/components/modules/FocoModule";
+import AjustesModule from "@/components/modules/AjustesModule";
 
 export type ModuleKey =
   | "dashboard"
@@ -19,7 +20,8 @@ export type ModuleKey =
   | "disciplinas"
   | "radio"
   | "estatisticas"
-  | "foco";
+  | "foco"
+  | "ajustes";
 
 export const MODULE_META: Record<
   ModuleKey,
@@ -32,6 +34,7 @@ export const MODULE_META: Record<
   radio: { icon: "/Icones/Radio.png", title: "Rádio", sub: "sons do quarto" },
   estatisticas: { icon: "/Icones/Grafico.png", title: "Caneca", sub: "seu esforço, com carinho" },
   foco: { icon: "/Icones/Abajur.png", title: "Luminária", sub: "modo foco" },
+  ajustes: { icon: "/Icones/Abajur.png", title: "Ajustes", sub: "ambiente & conta" },
 };
 
 /** origem aproximada de cada objeto na cena (% da viewport) para o morph */
@@ -43,6 +46,7 @@ export const MODULE_ORIGIN: Record<ModuleKey, { x: number; y: number }> = {
   radio: { x: 12, y: 50 },
   estatisticas: { x: 71, y: 70 },
   foco: { x: 31, y: 52 },
+  ajustes: { x: 8, y: 30 },
 };
 
 function ModuleBody({ moduleKey, detailId }: { moduleKey: ModuleKey; detailId?: string }) {
@@ -61,6 +65,8 @@ function ModuleBody({ moduleKey, detailId }: { moduleKey: ModuleKey; detailId?: 
       return <EstatisticasPage />;
     case "foco":
       return <FocoModule />;
+    case "ajustes":
+      return <AjustesModule />;
   }
 }
 

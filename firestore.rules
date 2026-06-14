@@ -1,0 +1,20 @@
+rules_version = '2';
+
+// Regras de segurança do Nook.
+// Cada pessoa só pode ler e escrever o próprio quarto (/users/{uid}).
+// Cole isto em: Console do Firebase → Firestore Database → Regras → Publicar.
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    match /users/{uid} {
+      allow read, write: if request.auth != null
+                         && request.auth.uid == uid;
+    }
+
+    // tudo o mais é negado por padrão
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
