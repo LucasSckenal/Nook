@@ -84,8 +84,21 @@ export function EstudaChat() {
   }
 
   return (
-    <div className="nk-card flex h-[560px] flex-col">
-      <div className="flex items-center gap-2 border-b border-ink-faint/30 px-5 py-3">
+    <div
+      className="flex h-[min(620px,72vh)] flex-col overflow-hidden rounded-(--radius-md)"
+      style={{
+        background: "color-mix(in srgb, var(--color-surface) 80%, transparent)",
+        backdropFilter: "blur(12px)",
+        WebkitBackdropFilter: "blur(12px)",
+        boxShadow: "0 12px 30px #00000055, 0 0 0 1px #ffffff12, inset 0 1px 0 #ffffff10",
+      }}
+    >
+      <div className="flex items-center gap-2 border-b border-white/[0.06] px-5 py-3">
+        <span className="mr-1 flex gap-1.5" aria-hidden>
+          <span className="h-2.5 w-2.5 rounded-full bg-clay/90" />
+          <span className="h-2.5 w-2.5 rounded-full bg-amber/90" />
+          <span className="h-2.5 w-2.5 rounded-full bg-moss/90" />
+        </span>
         <span className="flex h-7 w-7 items-center justify-center rounded-full bg-lavender/20 text-sm">
           🪻
         </span>

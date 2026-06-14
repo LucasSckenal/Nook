@@ -182,7 +182,7 @@ export function RoomSceneImage({
       <div
         className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"
         style={{
-          width: "min(100vw, 150vh)",
+          width: "max(100vw, 150vh)",
           aspectRatio: "3 / 2",
           filter: lit ? "brightness(1)" : "brightness(0.04)",
           transition: "filter 1300ms var(--nk-ease-ui) 250ms",

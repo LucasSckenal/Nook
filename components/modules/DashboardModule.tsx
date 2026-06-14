@@ -28,40 +28,183 @@ export default function DashboardPage() {
   if (!mounted)
     return (
       <div className="space-y-4">
+        <div className="nk-skeleton h-9 w-full" />
         <div className="nk-skeleton h-10 w-72" />
-        <div className="nk-skeleton h-40 w-full" />
         <div className="nk-skeleton h-64 w-full" />
       </div>
     );
 
+  const openPalette = () =>
+    window.dispatchEvent(new KeyboardEvent("keydown", { key: "k", ctrlKey: true, bubbles: true }));
+
   return (
-    <div>
-      <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
-        <h2 className="font-display text-3xl text-ink-high">
-          {greeting()}, {userName}.
-        </h2>
-        <div className="flex gap-1 rounded-(--radius-md) bg-surface p-1">
+    <div className="relative">
+      {/* papel de parede do desktop — preenche o módulo, com o céu respirando */}
+      <div className="pointer-events-none absolute inset-0 -z-10 overflow-hidden rounded-(--radius-lg)" aria-hidden>
+        <div
+          className="absolute inset-0"
+          style={{
+            background:
+              "linear-gradient(180deg, #2c2552 0%, #43406e 22%, #6a4f6e 40%, #2c2333 64%, #1a1422 100%)",
+          }}
+        />
+        {/* véu suave só para os apps manterem contraste, sem apagar o céu */}
+        <div className="absolute inset-0" style={{ background: "linear-gradient(180deg, transparent 0%, #0b0e1455 46%, #0b0e14a0 100%)" }} />
+      </div>
+
+      {/* barra de título da janela (estilo mockup): semáforo · título · busca · abas */}
+      <div className="relative z-[2] flex items-center justify-between gap-3 border-b border-white/[0.07] bg-void/35 px-4 py-2.5 backdrop-blur-md sm:px-5">
+        <div className="flex min-w-0 items-center gap-3">
+          <span className="flex items-center gap-2" aria-hidden>
+            <Link
+              href="/"
+              aria-label="Voltar ao quarto"
+              title="Voltar ao quarto (Esc)"
+              className="group flex h-3.5 w-3.5 items-center justify-center rounded-full bg-clay/90 text-[9px] leading-none text-clay transition-colors hover:text-void/80"
+            >
+              ✕
+            </Link>
+            <span className="h-3.5 w-3.5 rounded-full bg-amber/85" />
+            <span className="h-3.5 w-3.5 rounded-full bg-moss/85" />
+          </span>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/Icones/Monitor.png" alt="" aria-hidden draggable={false} className="h-6 w-6 select-none rounded-[6px] object-contain" />
+          <h1 className="font-display text-base text-ink-high">Computador</h1>
+          <span className="hidden text-xs text-ink-low sm:inline">dashboard &amp; Estuda</span>
+        </div>
+        <div className="flex items-center gap-2">
           <button
-            onClick={() => setTab("visao")}
-            className={`rounded-(--radius-sm) px-4 py-1.5 text-sm transition-colors ${
-              tab === "visao" ? "bg-raised text-ink-high" : "text-ink-mid hover:text-ink-high"
-            }`}
+            onClick={openPalette}
+            className="hidden items-center gap-2 rounded-full bg-void/60 px-3 py-1 text-xs text-ink-low shadow-[inset_0_0_0_1px_#ffffff12] transition-colors hover:text-ink-mid md:flex"
           >
-            Visão geral
+            <span aria-hidden>🔍</span>
+            <span>Buscar algo…</span>
+            <kbd className="rounded bg-surface px-1.5 py-0.5 text-[10px]">Ctrl K</kbd>
           </button>
-          <button
-            onClick={() => setTab("estuda")}
-            className={`rounded-(--radius-sm) px-4 py-1.5 text-sm transition-colors ${
-              tab === "estuda" ? "bg-raised text-lavender" : "text-ink-mid hover:text-ink-high"
-            }`}
-          >
-            🪻 Estuda
-          </button>
+          <div className="flex gap-1 rounded-(--radius-md) bg-void/45 p-1 shadow-[0_0_0_1px_#ffffff14]">
+            <button
+              onClick={() => setTab("visao")}
+              className={`rounded-(--radius-sm) px-3 py-1 text-sm transition-colors ${
+                tab === "visao" ? "bg-raised text-ink-high" : "text-ink-mid hover:text-ink-high"
+              }`}
+            >
+              🗔 <span className="hidden sm:inline">Visão geral</span>
+            </button>
+            <button
+              onClick={() => setTab("estuda")}
+              className={`rounded-(--radius-sm) px-3 py-1 text-sm transition-colors ${
+                tab === "estuda" ? "bg-raised text-lavender" : "text-ink-mid hover:text-ink-high"
+              }`}
+            >
+              🪻 <span className="hidden sm:inline">Estuda</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* corpo da janela */}
+      <div className="px-5 py-5 sm:px-6">
+      {/* hero: saudação + sol/nuvens à direita */}
+      <div
+        className="relative mb-5 overflow-hidden rounded-(--radius-lg) px-5 py-5 sm:px-6"
+        style={{
+          background: "linear-gradient(110deg, #2a2348 0%, #3c3a68 46%, #6a4a64 100%)",
+          boxShadow: "0 0 0 1px #ffffff12, inset 0 1px 0 #ffffff16",
+        }}
+      >
+        {/* sol nascendo + nuvens, à direita */}
+        <svg
+          className="pointer-events-none absolute right-0 top-0 h-full w-2/3"
+          viewBox="0 0 320 150"
+          preserveAspectRatio="xMaxYMid slice"
+          aria-hidden
+        >
+          <defs>
+            <radialGradient id="dashSun" cx="0.5" cy="0.5" r="0.5">
+              <stop offset="0" stopColor="#ffd9a0" />
+              <stop offset="0.55" stopColor="#f0a86a" />
+              <stop offset="1" stopColor="#c97b63" />
+            </radialGradient>
+          </defs>
+          <circle cx="232" cy="138" r="92" fill="#e8a87c" opacity="0.16" />
+          <circle cx="232" cy="138" r="60" fill="#e8a87c" opacity="0.22" />
+          <circle cx="232" cy="140" r="38" fill="url(#dashSun)" />
+          <g fill="#b49ac4" opacity="0.5">
+            <ellipse cx="150" cy="60" rx="34" ry="11" />
+            <ellipse cx="180" cy="54" rx="24" ry="9" />
+            <ellipse cx="270" cy="46" rx="30" ry="10" />
+          </g>
+          <g fill="#e8c9d4" opacity="0.35">
+            <ellipse cx="300" cy="92" rx="40" ry="10" />
+          </g>
+        </svg>
+
+        <div className="relative flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-center gap-3.5">
+            <span
+              className="flex h-11 w-11 items-center justify-center rounded-(--radius-md) text-2xl"
+              style={{ background: "linear-gradient(160deg, #f0a86a, #c97b63)", boxShadow: "0 4px 14px #c97b6340" }}
+              aria-hidden
+            >
+              ☀️
+            </span>
+            <div>
+              <h2 className="font-display text-3xl text-ink-high" style={{ textShadow: "0 2px 18px #00000070" }}>
+                {greeting()}, {userName}. <span className="align-middle">👋</span>
+              </h2>
+              <p className="mt-0.5 text-sm text-ink-mid" style={{ textShadow: "0 1px 8px #00000070" }}>
+                Seu sistema de estudos está ligado.
+              </p>
+            </div>
+          </div>
         </div>
       </div>
 
       {tab === "visao" ? <Overview /> : <EstudaChat />}
+      </div>
     </div>
+  );
+}
+
+/** uma "janela" de desktop: barra de título com semáforo + corpo de vidro */
+function Win({
+  title,
+  icon,
+  reveal,
+  className = "",
+  bodyClass = "p-5",
+  children,
+}: {
+  title: string;
+  icon?: string;
+  reveal?: string;
+  className?: string;
+  bodyClass?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <section
+      className={`nk-reveal ${reveal ?? ""} flex flex-col overflow-hidden rounded-(--radius-md) ${className}`}
+      style={{
+        background: "color-mix(in srgb, var(--color-surface) 80%, transparent)",
+        backdropFilter: "blur(12px)",
+        WebkitBackdropFilter: "blur(12px)",
+        boxShadow: "0 12px 30px #00000055, 0 0 0 1px #ffffff12, inset 0 1px 0 #ffffff10",
+      }}
+    >
+      <div className="flex items-center gap-2 border-b border-white/[0.06] px-3 py-2">
+        <span className="flex gap-1.5" aria-hidden>
+          <span className="h-2.5 w-2.5 rounded-full bg-clay/90" />
+          <span className="h-2.5 w-2.5 rounded-full bg-amber/90" />
+          <span className="h-2.5 w-2.5 rounded-full bg-moss/90" />
+        </span>
+        <p className="ml-1 flex items-center gap-1.5 text-xs text-ink-mid">
+          {icon && <span aria-hidden>{icon}</span>}
+          {title}
+        </p>
+      </div>
+      <div className={`flex-1 ${bodyClass}`}>{children}</div>
+    </section>
   );
 }
 
@@ -116,10 +259,9 @@ function Overview() {
   );
 
   return (
-    <div className="grid grid-cols-1 gap-5 lg:grid-cols-3">
+    <div className="grid grid-cols-1 items-start gap-5 lg:grid-cols-3">
       {/* Hoje */}
-      <section className="nk-card nk-reveal p-6 lg:col-span-2">
-        <h3 className="mb-1 font-display text-lg text-ink-high">Hoje</h3>
+      <Win title="Hoje" icon="📋" className="lg:col-span-2" bodyClass="p-6">
         <p className="mb-4 text-xs text-ink-low">
           {new Date().toLocaleDateString("pt-BR", { weekday: "long", day: "numeric", month: "long" })}
         </p>
@@ -158,24 +300,20 @@ function Overview() {
         >
           ver todas as tarefas →
         </Link>
-      </section>
+      </Win>
 
       {/* Sugestão da Estuda */}
-      <section className="nk-reveal nk-reveal-1 rounded-(--radius-md) border border-lavender/30 bg-lavender/5 p-6">
-        <h3 className="mb-3 flex items-center gap-2 text-sm font-medium text-lavender">
-          🪻 A Estuda reparou
-        </h3>
+      <Win title="A Estuda reparou" icon="🪻" reveal="nk-reveal-1" bodyClass="p-6">
         <div className="space-y-2 text-sm leading-relaxed text-ink-mid">
           {(suggestion.artifact?.items ?? [suggestion.text]).slice(0, 2).map((t, i) => (
             <p key={i}>{t.replace(/\*\*/g, "")}</p>
           ))}
         </div>
         <p className="mt-4 text-xs text-ink-low">uma observação por dia, no máximo — sem alarme</p>
-      </section>
+      </Win>
 
       {/* Próximas entregas */}
-      <section className="nk-card nk-reveal nk-reveal-2 p-6">
-        <h3 className="mb-4 font-display text-lg text-ink-high">Próximas avaliações</h3>
+      <Win title="Próximas avaliações" icon="📅" reveal="nk-reveal-2" bodyClass="p-6">
         <div className="space-y-3">
           {upcoming.map(({ s, a }) => (
             <Link
@@ -202,11 +340,10 @@ function Overview() {
             <p className="text-sm text-ink-low">Nenhuma avaliação em aberto. 🌙</p>
           )}
         </div>
-      </section>
+      </Win>
 
       {/* Radar de carga */}
-      <section className="nk-card nk-reveal nk-reveal-3 p-6">
-        <h3 className="mb-1 font-display text-lg text-ink-high">Radar de carga</h3>
+      <Win title="Radar de carga" icon="📊" reveal="nk-reveal-3" bodyClass="p-6">
         <p className="mb-4 text-xs text-ink-low">próximas 4 semanas — quanto mais quente, mais cheio o dia</p>
         <div className="space-y-1.5">
           <div className="grid grid-cols-7 gap-1.5">
@@ -242,11 +379,10 @@ function Overview() {
             </div>
           ))}
         </div>
-      </section>
+      </Win>
 
       {/* Semana em horas */}
-      <section className="nk-card nk-reveal nk-reveal-4 p-6">
-        <h3 className="mb-4 font-display text-lg text-ink-high">Sua semana</h3>
+      <Win title="Sua semana" icon="⏱" reveal="nk-reveal-4" bodyClass="p-6">
         <p className="font-display text-4xl text-amber">{minutesToHuman(weekMinutes)}</p>
         <p className="mt-1 text-sm text-ink-mid">de foco desde segunda</p>
         <div className="mt-5 space-y-2 text-sm text-ink-mid">
@@ -258,7 +394,7 @@ function Overview() {
             ver estatísticas completas →
           </Link>
         </div>
-      </section>
+      </Win>
     </div>
   );
 }

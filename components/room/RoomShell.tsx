@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { RoomSceneImage } from "./RoomSceneImage";
+import { RoomSceneObjects } from "./RoomSceneObjects";
 import {
   ModuleOverlay,
   MODULE_ORIGIN,
@@ -27,6 +27,17 @@ const KEYS: ModuleKey[] = [
 function isModuleKey(v: string | null): v is ModuleKey {
   return !!v && (KEYS as string[]).includes(v);
 }
+
+const QUICK_NAV: { href: string; icon: string; label: string }[] = [
+  { href: "/?open=dashboard", icon: "/Icones/Monitor.png", label: "Computador" },
+  { href: "/?open=tarefas", icon: "/Icones/Livro.png", label: "Caderno" },
+  { href: "/?open=calendario", icon: "/Icones/Calendario.png", label: "Calendário" },
+  { href: "/?open=disciplinas", icon: "/Icones/Livros.png", label: "Estante" },
+  { href: "/?open=radio", icon: "/Icones/Radio.png", label: "Rádio" },
+  { href: "/?open=estatisticas", icon: "/Icones/Grafico.png", label: "Caneca" },
+  { href: "/?open=foco", icon: "/Icones/Abajur.png", label: "Modo foco" },
+  { href: "/processo", icon: "/Icones/Foto.png", label: "Processo de design" },
+];
 
 interface Rendered {
   key: ModuleKey;
@@ -142,7 +153,7 @@ export function RoomShell() {
         }}
       >
         {mounted ? (
-          <RoomSceneImage onOpen={openFromRoom} zoomTarget={activeKey} />
+          <RoomSceneObjects onOpen={openFromRoom} zoomTarget={activeKey} />
         ) : (
           <div className="flex h-screen items-center justify-center">
             <p className="font-display text-xl text-ink-low">acendendo a luz…</p>
@@ -204,25 +215,39 @@ export function RoomShell() {
         </div>
       </header>
 
-      {/* rodapé: navegação simples (a metáfora nunca é pedágio) */}
+      {/* rodapé: navegação rápida em ícones (mesma linguagem da dock) */}
       <nav
-        aria-label="Navegação simples"
-        className="absolute inset-x-0 bottom-0 z-10 flex flex-wrap items-center justify-center gap-x-5 gap-y-1 p-4 text-xs text-ink-low"
+        aria-label="Navegação rápida"
+        className="absolute inset-x-0 bottom-0 z-10 flex justify-center pb-3"
         style={{
           opacity: recede ? 0 : 1,
           pointerEvents: recede ? "none" : "auto",
           transition: "opacity 300ms var(--nk-ease-ui)",
         }}
       >
-        <Link className="transition-colors hover:text-amber" href="/?open=dashboard">computador</Link>
-        <Link className="transition-colors hover:text-amber" href="/?open=tarefas">caderno</Link>
-        <Link className="transition-colors hover:text-amber" href="/?open=calendario">calendário</Link>
-        <Link className="transition-colors hover:text-amber" href="/?open=disciplinas">estante</Link>
-        <Link className="transition-colors hover:text-amber" href="/?open=radio">rádio</Link>
-        <Link className="transition-colors hover:text-amber" href="/?open=estatisticas">caneca</Link>
-        <Link className="transition-colors hover:text-amber" href="/?open=foco">modo foco</Link>
-        <span className="text-ink-faint">·</span>
-        <Link className="transition-colors hover:text-lavender" href="/processo">processo de design</Link>
+        <div className="flex items-center gap-1 rounded-(--radius-lg) bg-raised/85 px-3 py-2 opacity-75 shadow-[0_8px_32px_#00000040,0_0_0_1px_#ffffff0a] backdrop-blur-xl transition-opacity duration-(--nk-dur-quick) hover:opacity-100">
+          {QUICK_NAV.map((it) => (
+            <Link
+              key={it.href}
+              href={it.href}
+              title={it.label}
+              aria-label={it.label}
+              className="group relative flex h-11 w-11 items-center justify-center rounded-(--radius-md) transition-all duration-(--nk-dur-instant) hover:-translate-y-0.5 hover:bg-surface"
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={it.icon}
+                alt=""
+                aria-hidden
+                draggable={false}
+                className="h-9 w-9 select-none rounded-[9px] object-contain transition-transform duration-(--nk-dur-instant) group-hover:scale-110"
+              />
+              <span className="pointer-events-none absolute -top-9 whitespace-nowrap rounded-md bg-raised px-2 py-1 text-xs text-ink-mid opacity-0 shadow-[0_0_0_1px_#ffffff0a] transition-opacity group-hover:opacity-100">
+                {it.label}
+              </span>
+            </Link>
+          ))}
+        </div>
       </nav>
 
       {/* o módulo, nascendo do objeto */}

@@ -4,11 +4,10 @@ import Link from "next/link";
 import { useState } from "react";
 import { SlotEditor } from "@/components/SlotEditor";
 import { useMounted } from "@/components/useMounted";
-import { daysBetween, relativeDay, todayIso } from "@/lib/dates";
 import { gradeOutlook, useNook } from "@/lib/store";
 import { useToasts } from "@/lib/toast";
 import { audioUiTick } from "@/lib/audio";
-import type { ClassSlot } from "@/lib/types";
+import type { ClassSlot, Subject } from "@/lib/types";
 
 /** paleta de lombadas — tons do design system Lanterna */
 const SPINE_COLORS = [
@@ -126,16 +125,156 @@ function NewSubjectForm({ onClose }: { onClose: () => void }) {
   );
 }
 
+/** símbolo da disciplina pela área (aproximação do mockup) */
+function subjectGlyph(name: string): string {
+  const n = name.toLowerCase();
+  if (n.includes("cálcul") || n.includes("calcul")) return "∫";
+  if (n.includes("álgebra") || n.includes("algebra") || n.includes("linear")) return "∑";
+  if (n.includes("algoritmo") || n.includes("estrutura")) return "🌳";
+  if (n.includes("físic") || n.includes("fisic")) return "⚛";
+  if (n.includes("banco") || n.includes("dados")) return "🗄";
+  if (n.includes("engenharia") || n.includes("software")) return "⌘";
+  if (n.includes("interface") || n.includes("ihc") || n.includes("design")) return "🎨";
+  if (n.includes("redes")) return "🌐";
+  if (n.includes("quím") || n.includes("quim")) return "⚗";
+  return "📖";
+}
+
+/** uma lombada de livro 3D na prateleira (estilo couro com nota e fita) */
+function BookSpine({ subject, height }: { subject: Subject; height: number }) {
+  const c = subject.color;
+  const o = gradeOutlook(subject);
+  const glyph = subjectGlyph(subject.name);
+  const gradeColor = o.current == null ? "#cbb78f" : o.current >= 6 ? "#9caf88" : "#e0917a";
+
+  return (
+    <Link
+      href={`/?open=disciplinas&id=${subject.id}`}
+      className="group relative flex shrink-0 origin-bottom flex-col items-center rounded-t-[6px] px-2.5 pb-3 pt-3 text-center transition-transform duration-(--nk-dur-quick) hover:-translate-y-3 hover:rotate-[-1.5deg]"
+      style={{
+        width: "clamp(96px, 13vw, 122px)",
+        height,
+        background: `linear-gradient(96deg, color-mix(in srgb, ${c} 80%, #fff) 0%, ${c} 14%, color-mix(in srgb, ${c} 55%, #000) 92%)`,
+        boxShadow:
+          "inset 8px 0 12px -7px #ffffff66, inset -12px 0 16px -7px #00000090, 0 8px 16px #00000055",
+        borderTop: `3px solid color-mix(in srgb, ${c} 72%, #fff)`,
+      }}
+      title={subject.name}
+    >
+      {/* filetes dourados (nervuras da lombada) */}
+      <span className="pointer-events-none absolute inset-x-2.5 top-9 h-px bg-[#e8c98a]/30" />
+      <span className="pointer-events-none absolute inset-x-2.5 bottom-12 h-px bg-[#e8c98a]/30" />
+      <span className="text-[10px] tracking-widest text-[#e8c98a]/60" aria-hidden>✦</span>
+
+      {/* nome */}
+      <p
+        className="mt-1 line-clamp-3 font-display text-[13px] font-medium leading-tight"
+        style={{ color: "color-mix(in srgb, " + c + " 12%, #fff)" }}
+      >
+        {subject.name}
+      </p>
+
+      {/* símbolo da disciplina */}
+      <span
+        className="my-auto text-3xl"
+        style={{ color: "color-mix(in srgb, " + c + " 30%, #f0e6cf)", textShadow: "0 1px 2px #00000060" }}
+        aria-hidden
+      >
+        {glyph}
+      </span>
+
+      {/* nota parcial + progresso do semestre */}
+      <div className="w-full">
+        {o.current != null ? (
+          <p className="font-display text-2xl leading-none" style={{ color: gradeColor }}>
+            {o.current.toFixed(1)}
+          </p>
+        ) : (
+          <p className="text-[10px] leading-tight text-white/70">sem<br />notas</p>
+        )}
+        <p className="mt-1 text-[9px] text-white/65">{Math.round(o.weightDone * 100)}% do semestre</p>
+        <div className="mx-auto mt-1.5 h-1 w-12 overflow-hidden rounded-full bg-black/30">
+          <div className="h-full rounded-full" style={{ width: `${Math.round(o.weightDone * 100)}%`, background: "#e8c98a" }} />
+        </div>
+      </div>
+
+      {/* fita-marcador */}
+      <span
+        className="absolute -bottom-2 left-1/2 h-6 w-3.5 -translate-x-1/2"
+        style={{
+          background: `linear-gradient(180deg, color-mix(in srgb, ${c} 78%, #fff), ${c})`,
+          clipPath: "polygon(0 0, 100% 0, 100% 100%, 50% 72%, 0 100%)",
+          boxShadow: "0 3px 5px #00000060",
+        }}
+        aria-hidden
+      />
+    </Link>
+  );
+}
+
+/** uma prateleira (madeira) com holofotes e os livros em pé */
+function Shelf({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="relative">
+      {/* holofotes embutidos sobre a prateleira */}
+      <div className="pointer-events-none absolute inset-x-6 top-0 flex justify-around" aria-hidden>
+        {Array.from({ length: 4 }).map((_, i) => (
+          <span
+            key={i}
+            className="h-24 w-24 rounded-full"
+            style={{ background: "radial-gradient(circle at 50% 0%, #f0c08930, transparent 62%)" }}
+          />
+        ))}
+      </div>
+      <div className="relative flex items-end gap-2.5 overflow-x-auto px-4 pb-3 pt-3 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        {children}
+      </div>
+      {/* tábua de madeira */}
+      <div
+        className="h-4 rounded-[2px]"
+        style={{
+          background: "linear-gradient(180deg, #6a513a, #3e2f20)",
+          boxShadow: "inset 0 2px 0 #8a6e4f, 0 6px 16px #00000070",
+        }}
+      />
+    </div>
+  );
+}
+
 export default function DisciplinasPage() {
   const mounted = useMounted();
   const subjects = useNook((s) => s.subjects);
-  const tasks = useNook((s) => s.tasks);
   const [adding, setAdding] = useState(false);
-  const today = todayIso();
 
   if (!mounted) return <div className="nk-skeleton h-[60vh] w-full" />;
 
   const empty = subjects.length === 0;
+
+  // o botão de adicionar entra como um "livro" a mais na última prateleira
+  const addSlot = (
+    <button
+      onClick={() => setAdding(true)}
+      className="group flex shrink-0 origin-bottom flex-col items-center justify-center gap-2 rounded-[6px] border-2 border-dashed px-3 text-ink-low transition-transform duration-(--nk-dur-quick) hover:-translate-y-3"
+      style={{
+        width: "clamp(96px, 13vw, 122px)",
+        height: 250,
+        borderColor: "#e8a87c50",
+        background: "#ffffff06",
+      }}
+      aria-label="Adicionar disciplina"
+    >
+      <span className="text-3xl leading-none transition-colors group-hover:text-amber">+</span>
+      <span className="text-center text-[11px] leading-tight transition-colors group-hover:text-amber">
+        {empty ? "Adicionar\nprimeiro livro" : "Adicionar\nnovo livro"}
+      </span>
+    </button>
+  );
+
+  // distribui os livros em prateleiras de 6
+  const PER_SHELF = 6;
+  const rows: Subject[][] = [];
+  for (let i = 0; i < subjects.length; i += PER_SHELF) rows.push(subjects.slice(i, i + PER_SHELF));
+  if (rows.length === 0) rows.push([]); // estante vazia: uma prateleira só com o "+"
 
   return (
     <div>
@@ -145,61 +284,37 @@ export default function DisciplinasPage() {
           : `${subjects.length} disciplina${subjects.length > 1 ? "s" : ""} neste semestre. Cada lombada é uma porta.`}
       </p>
 
-      {/* a estante: lombadas */}
-      <div className="nk-reveal nk-reveal-1 flex flex-wrap items-end gap-3 rounded-(--radius-lg) bg-surface p-6 pb-0 shadow-[0_0_0_1px_#ffffff08]">
-        {subjects.map((s, i) => {
-          const pending = tasks.filter((t) => !t.done && t.subjectId === s.id).length;
-          const next = s.assessments
-            .filter((a) => a.grade == null && daysBetween(today, a.date) >= 0)
-            .sort((a, b) => a.date.localeCompare(b.date))[0];
-          return (
-            <Link
-              key={s.id}
-              href={`/?open=disciplinas&id=${s.id}`}
-              className="group relative flex w-[120px] flex-col justify-between rounded-t-(--radius-md) px-4 pb-5 pt-4 transition-transform duration-(--nk-dur-quick) hover:-translate-y-2"
-              style={{
-                background: `linear-gradient(180deg, ${s.color}38, ${s.color}1f)`,
-                borderTop: `3px solid ${s.color}`,
-                height: 240 + (i % 3) * 22,
-              }}
-            >
-              <div>
-                <p className="text-[11px] uppercase tracking-wider text-ink-low">
-                  {s.code}
-                </p>
-                <p className="mt-2 font-display text-base leading-snug text-ink-high">
-                  {s.name}
-                </p>
-              </div>
-              <div className="space-y-1 text-[11px] text-ink-mid">
-                {next && (
-                  <p>
-                    <span style={{ color: next.kind === "prova" ? "#c97b63" : "#8fa8bf" }}>
-                      {next.kind === "prova" ? "◉ prova" : "◍ entrega"}
-                    </span>{" "}
-                    {relativeDay(next.date)}
-                  </p>
-                )}
-                {pending > 0 && <p>{pending} tarefa{pending > 1 ? "s" : ""} aberta{pending > 1 ? "s" : ""}</p>}
-                {!next && pending === 0 && <p className="text-moss">em dia ✓</p>}
-              </div>
-            </Link>
-          );
-        })}
-
-        {/* lombada vazia: adicionar disciplina */}
-        <button
-          onClick={() => setAdding(true)}
-          className="group flex w-[120px] flex-col items-center justify-center gap-2 rounded-t-(--radius-md) border-2 border-dashed border-ink-faint/70 px-4 pb-5 pt-4 text-ink-low transition-all duration-(--nk-dur-quick) hover:-translate-y-2 hover:border-amber/60 hover:text-amber"
-          style={{ height: empty ? 240 : 218 }}
-          aria-label="Adicionar disciplina"
+      {/* a estante de madeira */}
+      <div
+        className="nk-reveal nk-reveal-1 rounded-(--radius-lg) p-3"
+        style={{
+          background: "linear-gradient(180deg, #2c2118, #211911)",
+          boxShadow: "0 18px 44px #00000060, inset 0 0 0 1px #00000060, inset 0 0 60px #00000050",
+        }}
+      >
+        {/* moldura: laterais de madeira + fundo escuro */}
+        <div
+          className="flex gap-2 rounded-(--radius-md) p-1"
+          style={{ background: "linear-gradient(90deg, #3a2c1f, #4a3826 4%, #1c140d 12%, #1c140d 88%, #4a3826 96%, #3a2c1f)" }}
         >
-          <span className="text-2xl leading-none">+</span>
-          <span className="text-xs">{empty ? "primeira disciplina" : "nova disciplina"}</span>
-        </button>
-
-        {/* base da prateleira */}
-        <div className="-mx-6 mt-0 h-3 w-[calc(100%+48px)] rounded-b-(--radius-lg) bg-raised" />
+          <div className="flex-1 space-y-5 px-1 py-2">
+            {rows.map((row, ri) => (
+              <Shelf key={ri}>
+                {row.map((s, i) => {
+                  return (
+                    <BookSpine
+                      key={s.id}
+                      subject={s}
+                      height={244 + (i % 3) * 18}
+                    />
+                  );
+                })}
+                {/* o "+" mora na última prateleira */}
+                {ri === rows.length - 1 && addSlot}
+              </Shelf>
+            ))}
+          </div>
+        </div>
       </div>
 
       {adding && <NewSubjectForm onClose={() => setAdding(false)} />}

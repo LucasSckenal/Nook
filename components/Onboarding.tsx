@@ -74,7 +74,7 @@ export function Onboarding() {
         {/* a caixa 3:2 da cena, replicada para mirar os objetos */}
         <div
           className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"
-          style={{ width: "min(100vw, 150vh)", aspectRatio: "3 / 2" }}
+          style={{ width: "max(100vw, 150vh)", aspectRatio: "3 / 2" }}
         >
           {/* escuridão com o buraco do holofote (sombra gigante cobre o resto) */}
           <div

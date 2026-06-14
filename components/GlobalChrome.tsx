@@ -30,10 +30,15 @@ function PreferencesSync() {
   const theme = useNook((s) => s.theme);
   const calmMotion = useNook((s) => s.calmMotion);
 
-  // PWA: registra o service worker (cache leve + offline)
+  // PWA: registra o service worker só em produção (em dev ele serve chunks
+  // antigos do cache e quebra o HMR). Em dev, garante que nenhum SW fique ativo.
   useEffect(() => {
-    if ("serviceWorker" in navigator) {
+    if (!("serviceWorker" in navigator)) return;
+    if (process.env.NODE_ENV === "production") {
       navigator.serviceWorker.register("/sw.js").catch(() => {});
+    } else {
+      navigator.serviceWorker.getRegistrations().then((rs) => rs.forEach((r) => r.unregister()));
+      if (window.caches) caches.keys().then((ks) => ks.forEach((k) => caches.delete(k)));
     }
   }, []);
 

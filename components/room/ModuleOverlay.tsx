@@ -36,13 +36,13 @@ export const MODULE_META: Record<
 
 /** origem aproximada de cada objeto na cena (% da viewport) para o morph */
 export const MODULE_ORIGIN: Record<ModuleKey, { x: number; y: number }> = {
-  dashboard: { x: 50, y: 50 },
-  tarefas: { x: 23, y: 62 },
-  calendario: { x: 37, y: 16 },
-  disciplinas: { x: 88, y: 40 },
-  radio: { x: 70, y: 61 },
-  estatisticas: { x: 61, y: 62 },
-  foco: { x: 9, y: 62 },
+  dashboard: { x: 49, y: 48 },
+  tarefas: { x: 46, y: 72 },
+  calendario: { x: 66, y: 20 },
+  disciplinas: { x: 90, y: 25 },
+  radio: { x: 12, y: 50 },
+  estatisticas: { x: 71, y: 70 },
+  foco: { x: 31, y: 52 },
 };
 
 function ModuleBody({ moduleKey, detailId }: { moduleKey: ModuleKey; detailId?: string }) {
@@ -144,18 +144,19 @@ export function ModuleOverlay({
   }
 
   return (
-    <div className="fixed inset-0 z-40 flex justify-center px-3 pb-20 pt-3 sm:px-8 sm:pb-22 sm:pt-6 md:px-14 md:pt-8">
+    <div className="fixed inset-0 z-40 flex items-center justify-center px-3 pb-20 pt-3 sm:px-6 sm:pb-20 sm:pt-6">
       {/* clicar no quarto (fora do vidro) volta a câmera */}
       <div className="absolute inset-0" onClick={onClose} aria-hidden />
 
       <div
-        className="relative flex w-full max-w-[1180px] flex-col overflow-hidden rounded-(--radius-lg)"
+        className="relative flex max-h-full w-full max-w-[1320px] flex-col overflow-hidden rounded-(--radius-lg)"
         style={{
           background: "color-mix(in srgb, var(--color-room) 82%, transparent)",
           backdropFilter: "blur(18px) saturate(1.15)",
           WebkitBackdropFilter: "blur(18px) saturate(1.15)",
           boxShadow:
             "0 32px 90px #00000073, 0 0 0 1px #ffffff14, inset 0 1px 0 #ffffff0f",
+          transformOrigin: `${origin.x}% ${origin.y}%`,
           transform: open
             ? "translate(0, 0) scale(1)"
             : `translate(${dx}vw, ${dy}vh) scale(0.24)`,
@@ -232,7 +233,8 @@ export function ModuleOverlay({
           />
         )}
 
-        {/* cabeçalho fino do vidro */}
+        {/* cabeçalho fino do vidro — o dashboard tem a sua própria barra de título */}
+        {moduleKey !== "dashboard" && (
         <header className="relative z-[1] flex items-center justify-between border-b border-white/[0.06] px-5 py-3 sm:px-7">
           <div className="flex items-center gap-4">
             <button
@@ -250,23 +252,21 @@ export function ModuleOverlay({
             </div>
           </div>
           <div className="flex items-center gap-3">
-            {moduleKey === "dashboard" && (
-              <span className="hidden items-center gap-1.5 md:flex" aria-hidden>
-                <span className="h-2.5 w-2.5 rounded-full bg-clay/80" />
-                <span className="h-2.5 w-2.5 rounded-full bg-amber/80" />
-                <span className="h-2.5 w-2.5 rounded-full bg-moss/80" />
-              </span>
-            )}
             <kbd className="hidden rounded-md bg-surface/70 px-2 py-1 text-xs text-ink-low shadow-[0_0_0_1px_#ffffff10] md:block">
               Ctrl K
             </kbd>
           </div>
         </header>
+        )}
 
         {/* conteúdo do módulo */}
         <div className="relative z-[1] flex-1 overflow-y-auto">
           <main
-            className="mx-auto max-w-[1100px] px-4 pb-10 pt-6 sm:px-7"
+            className={
+              moduleKey === "dashboard"
+                ? "w-full"
+                : "mx-auto max-w-[1180px] px-4 pb-10 pt-6 sm:px-7"
+            }
             style={{
               opacity: open ? 1 : 0,
               transition: "opacity 320ms var(--nk-ease-ui) 260ms",
