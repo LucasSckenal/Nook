@@ -5,6 +5,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useNook } from "@/lib/store";
+import { useRoomPhase, phaseFromClock } from "@/lib/roomPhase";
 import { daysBetween, relativeDay, todayIso } from "@/lib/dates";
 import type { ModuleKey } from "./ModuleOverlay";
 
@@ -20,6 +21,21 @@ import type { ModuleKey } from "./ModuleOverlay";
 
 const BG = "/room/Background.jpg";
 
+/** vídeos do quarto vivo: loops de ambiente + transições entre fases */
+const LOOP: Record<"dia" | "noite", string> = {
+  dia: "/room/ChuvaDia.mp4",
+  noite: "/room/ChuvaNoite.mp4",
+};
+const TRANS: Record<"diaPraNoite" | "noitePraDia", string> = {
+  diaPraNoite: "/room/TransicaoDiaPraNoite.mp4",
+  noitePraDia: "/room/TransicaoNoitePraDia.mp4",
+};
+/** quarto SEM chuva (quando a config "Chuva na janela" está desligada) */
+const STILL: Record<"dia" | "noite", string> = {
+  dia: "/room/Background.jpg",
+  noite: "/room/Noite.png",
+};
+
 /** ponto de mergulho da câmera por módulo (% do palco) — segue a composição */
 const ZOOM_POINT: Record<ModuleKey, { x: number; y: number }> = {
   dashboard: { x: 49, y: 48 },
@@ -28,8 +44,8 @@ const ZOOM_POINT: Record<ModuleKey, { x: number; y: number }> = {
   disciplinas: { x: 90, y: 25 },
   radio: { x: 12, y: 50 },
   estatisticas: { x: 71, y: 70 },
-  foco: { x: 31, y: 52 },
-  ajustes: { x: 8, y: 30 },
+  foco: { x: 26, y: 64 },
+  ajustes: { x: 32, y: 38 },
 };
 
 interface SceneObject {
@@ -50,13 +66,12 @@ const OBJECTS: SceneObject[] = [
   { key: "disciplinas", src: "/Objetos/Estante.png", label: "📚 Estante", left: 79.1, top: 0.6, width: 22, glow: "#9caf88", z: 6 },
   { key: "radio", src: "/Objetos/Radio.png", label: "📻 Rádio", left: 4.5, top: 42.9, width: 16, glow: "#c9a06a", z: 10 },
   { key: "dashboard", src: "/Objetos/Notebook.png", label: "💻 Computador", left: 36.9, top: 37.2, width: 23.6, glow: "#8fa8bf", z: 11 },
-  { key: "foco", src: "/Objetos/Cafe.png", label: "🎯 Modo foco", left: 23.1, top: 54.3, width: 8, glow: "#e8a87c", z: 13 },
+  { key: "foco", src: "/Objetos/Cafe.png", label: "🎯 Modo foco", left: 22.2, top: 58.1, width: 7.4, glow: "#e8a87c", z: 13 },
   { key: "estatisticas", src: "/Objetos/Agenda.png", label: "📊 Estatísticas", left: 61.9, top: 59.7, width: 18, glow: "#c97b63", z: 12 },
   { key: "tarefas", src: "/Objetos/Caderno.png", label: "📝 Caderno", left: 33.7, top: 61.6, width: 24.2, glow: "#e8a87c", z: 14 },
-  { key: "ajustes", src: "/Objetos/Luminaria.png", label: "💡 Ajustes", left: 1, top: 14, width: 14, glow: "#e8c98a", z: 8 },
+  { key: "ajustes", src: "/Objetos/Luminaria.png", label: "💡 Ajustes", left: 24.9, top: 27.6, width: 14, glow: "#e8c98a", z: 8 },
 ];
 
-/** área dos post-its de aviso (% do palco) — arraste no modo ?edit=1 */
 const NOTES_AREA: Pos = { left: 62.6, top: 39, width: 14.6 };
 
 type Pos = { left: number; top: number; width: number };
@@ -130,6 +145,31 @@ export function RoomSceneObjects({
     return () => cancelAnimationFrame(r);
   }, []);
 
+  // quarto vivo: vídeo de fundo por fase (dia/noite) + transições
+  const calmMotion = useNook((s) => s.calmMotion);
+  const rainVisual = useNook((s) => s.rainVisual);
+  const phase = useRoomPhase((s) => s.phase);
+  const transition = useRoomPhase((s) => s.transition);
+  const clearTransition = useRoomPhase((s) => s.clearTransition);
+
+  // fase inicial pelo relógio real (ou ?t=dia|noite para prévia)
+  useEffect(() => {
+    const st = useRoomPhase.getState();
+    if (st.initialized) return;
+    const forced = params.get("t");
+    st.init(forced === "dia" || forced === "noite" ? forced : phaseFromClock());
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // o sol se põe sozinho: a cada minuto segue o relógio (a menos que o
+  // usuário tenha escolhido a fase à mão pelo toggle ☀️/🌙)
+  useEffect(() => {
+    const id = window.setInterval(() => {
+      useRoomPhase.getState().autoAdvance();
+    }, 60000);
+    return () => window.clearInterval(id);
+  }, []);
+
   // posições editáveis (modo de ajuste)
   const [pos, setPos] = useState<Pos[]>(() =>
     OBJECTS.map((o) => ({ left: o.left, top: o.top, width: o.width }))
@@ -186,9 +226,9 @@ export function RoomSceneObjects({
       className="relative h-screen w-full overflow-hidden bg-void"
       style={{ pointerEvents: zoomTarget && !edit ? "none" : undefined }}
     >
-      {/* fundo borrado preenchendo as bordas */}
+      {/* fundo borrado preenchendo as bordas (segue a fase dia/noite) */}
       <img
-        src={BG}
+        src={STILL[phase]}
         alt=""
         aria-hidden
         className="pointer-events-none absolute inset-0 h-full w-full select-none object-cover"
@@ -208,13 +248,41 @@ export function RoomSceneObjects({
       >
         <div className="h-full w-full" style={camStyle}>
           <div className="relative h-full w-full" ref={stageRef}>
-            {/* quarto vazio */}
-            <img
-              src={BG}
-              alt="Quarto de estudos do Nook"
-              className="h-full w-full select-none object-cover"
-              draggable={false}
-            />
+            {/* quarto vivo: vídeo em loop da fase (com chuva). Sem chuva,
+                movimento calmo ou edição → still da fase (dia/noite). */}
+            {!rainVisual || calmMotion || edit ? (
+              <img
+                src={STILL[phase]}
+                alt="Quarto de estudos do Nook"
+                className="h-full w-full select-none object-cover"
+                draggable={false}
+              />
+            ) : (
+              <>
+                <video
+                  key={phase}
+                  src={LOOP[phase]}
+                  poster={STILL[phase]}
+                  autoPlay
+                  loop
+                  muted
+                  playsInline
+                  aria-label="Quarto de estudos do Nook"
+                  className="h-full w-full select-none object-cover"
+                />
+                {transition && (
+                  <video
+                    key={transition}
+                    src={TRANS[transition]}
+                    autoPlay
+                    muted
+                    playsInline
+                    onEnded={clearTransition}
+                    className="absolute inset-0 h-full w-full select-none object-cover"
+                  />
+                )}
+              </>
+            )}
 
             {/* objetos */}
             {OBJECTS.map((o, i) => {

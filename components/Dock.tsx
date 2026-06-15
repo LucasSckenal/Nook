@@ -49,7 +49,7 @@ export function Dock({
 
   return (
     <div className="pointer-events-none fixed inset-x-0 bottom-0 z-40 flex justify-center pb-3">
-      <div className="pointer-events-auto flex max-w-[calc(100vw-1.5rem)] items-center gap-1 overflow-x-auto rounded-(--radius-lg) bg-raised/90 px-3 py-2 opacity-60 shadow-[0_8px_32px_#00000040,0_0_0_1px_#ffffff0a] backdrop-blur-xl transition-opacity duration-(--nk-dur-quick) [scrollbar-width:none] hover:opacity-100 [&::-webkit-scrollbar]:hidden">
+      <div className="pointer-events-auto flex max-w-[calc(100vw-1.5rem)] flex-wrap items-center justify-center gap-1 rounded-(--radius-lg) bg-raised/90 px-3 py-2 opacity-60 shadow-[0_8px_32px_#00000040,0_0_0_1px_#ffffff0a] backdrop-blur-xl transition-opacity duration-(--nk-dur-quick) hover:opacity-100">
         {ITEMS.map((item) => {
           const active = item.kind === "module" && item.key === activeKey;
           const go = () => {

@@ -11,6 +11,7 @@ import {
 } from "./ModuleOverlay";
 import { useMounted } from "@/components/useMounted";
 import { SyncIndicator } from "@/components/auth/SyncIndicator";
+import { useRoomPhase } from "@/lib/roomPhase";
 import { useNook } from "@/lib/store";
 import { daysBetween, greeting, relativeDay, todayIso } from "@/lib/dates";
 import { toast } from "@/lib/toast";
@@ -57,6 +58,8 @@ export function RoomShell() {
   const params = useSearchParams();
   const mounted = useMounted();
   const userName = useNook((s) => s.userName);
+  const phase = useRoomPhase((s) => s.phase);
+  const togglePhase = useRoomPhase((s) => s.toggle);
 
   const openParam = params.get("open");
   const idParam = params.get("id") ?? undefined;
@@ -207,6 +210,16 @@ export function RoomShell() {
             </kbd>
             buscar · criar · navegar
           </span>
+          {mounted && (
+            <button
+              onClick={togglePhase}
+              aria-label={phase === "dia" ? "Mudar para noite" : "Mudar para dia"}
+              title={phase === "dia" ? "Anoitecer" : "Amanhecer"}
+              className="rounded-md px-1.5 py-1 text-base transition-colors hover:text-amber"
+            >
+              {phase === "dia" ? "🌙" : "☀️"}
+            </button>
+          )}
           <button
             onClick={() =>
               window.dispatchEvent(new KeyboardEvent("keydown", { key: "?", bubbles: true }))
@@ -238,7 +251,7 @@ export function RoomShell() {
           transition: "opacity 300ms var(--nk-ease-ui)",
         }}
       >
-        <div className="flex max-w-[calc(100vw-1.5rem)] items-center gap-1 overflow-x-auto rounded-(--radius-lg) bg-raised/85 px-3 py-2 opacity-75 shadow-[0_8px_32px_#00000040,0_0_0_1px_#ffffff0a] backdrop-blur-xl transition-opacity duration-(--nk-dur-quick) [scrollbar-width:none] hover:opacity-100 [&::-webkit-scrollbar]:hidden">
+        <div className="flex max-w-[calc(100vw-1.5rem)] flex-wrap items-center justify-center gap-1 rounded-(--radius-lg) bg-raised/85 px-3 py-2 opacity-75 shadow-[0_8px_32px_#00000040,0_0_0_1px_#ffffff0a] backdrop-blur-xl transition-opacity duration-(--nk-dur-quick) hover:opacity-100">
           {QUICK_NAV.map((it) => (
             <Link
               key={it.href}

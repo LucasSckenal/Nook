@@ -45,8 +45,8 @@ export const MODULE_ORIGIN: Record<ModuleKey, { x: number; y: number }> = {
   disciplinas: { x: 90, y: 25 },
   radio: { x: 12, y: 50 },
   estatisticas: { x: 71, y: 70 },
-  foco: { x: 31, y: 52 },
-  ajustes: { x: 8, y: 30 },
+  foco: { x: 26, y: 64 },
+  ajustes: { x: 32, y: 38 },
 };
 
 function ModuleBody({ moduleKey, detailId }: { moduleKey: ModuleKey; detailId?: string }) {
