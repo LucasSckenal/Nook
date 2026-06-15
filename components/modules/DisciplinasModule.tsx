@@ -140,30 +140,66 @@ function subjectGlyph(name: string): string {
   return "📖";
 }
 
-/** uma lombada de livro 3D na prateleira (estilo couro com nota e fita) */
-function BookSpine({ subject, height }: { subject: Subject; height: number }) {
+/** hash estável p/ dar variedade (largura/altura) por disciplina */
+function hashStr(str: string) {
+  let h = 2166136261;
+  for (let i = 0; i < str.length; i++) {
+    h ^= str.charCodeAt(i);
+    h = Math.imul(h, 16777619);
+  }
+  return h >>> 0;
+}
+
+/** uma lombada de livro 3D na prateleira (couro, folhas no topo, nota e fita) */
+function BookSpine({ subject }: { subject: Subject }) {
   const c = subject.color;
   const o = gradeOutlook(subject);
   const glyph = subjectGlyph(subject.name);
   const gradeColor = o.current == null ? "#cbb78f" : o.current >= 6 ? "#9caf88" : "#e0917a";
+  const pct = Math.round(o.weightDone * 100);
+
+  // variedade estável por disciplina — cada livro tem porte próprio
+  const h = hashStr(subject.id || subject.name);
+  const width = 104 + (h % 3) * 9; // 104 / 113 / 122
+  const height = 240 + ((h >> 3) % 4) * 15; // 240..285
 
   return (
     <Link
       href={`/?open=disciplinas&id=${subject.id}`}
-      className="group relative flex shrink-0 origin-bottom flex-col items-center rounded-t-[6px] px-2.5 pb-3 pt-3 text-center transition-transform duration-(--nk-dur-quick) hover:-translate-y-3 hover:rotate-[-1.5deg]"
+      className="group relative flex shrink-0 origin-bottom flex-col items-center rounded-t-[7px] px-2.5 pb-3 pt-5 text-center transition-transform duration-(--nk-dur-quick) hover:-translate-y-3 hover:rotate-[-1.5deg]"
       style={{
-        width: "clamp(96px, 13vw, 122px)",
+        width,
         height,
         background: `linear-gradient(96deg, color-mix(in srgb, ${c} 80%, #fff) 0%, ${c} 14%, color-mix(in srgb, ${c} 55%, #000) 92%)`,
         boxShadow:
-          "inset 8px 0 12px -7px #ffffff66, inset -12px 0 16px -7px #00000090, 0 8px 16px #00000055",
-        borderTop: `3px solid color-mix(in srgb, ${c} 72%, #fff)`,
+          "inset 9px 0 14px -8px #ffffff70, inset -14px 0 18px -8px #00000099, 0 10px 20px #00000060",
       }}
       title={subject.name}
     >
+      {/* folhas — o corte superior do livro */}
+      <span
+        className="pointer-events-none absolute inset-x-[3px] top-[3px] h-[6px] rounded-[2px]"
+        style={{
+          background:
+            "repeating-linear-gradient(90deg,#f1e7cf 0,#f1e7cf 1px,#d5c4a1 1px,#d5c4a1 2px)",
+          boxShadow: "0 1px 2px #00000055",
+        }}
+        aria-hidden
+      />
+      {/* grão de couro + brilho da capa */}
+      <span
+        className="pointer-events-none absolute inset-0 rounded-t-[7px]"
+        style={{
+          background:
+            "repeating-linear-gradient(180deg,#ffffff0a 0 1px,transparent 1px 3px), radial-gradient(130% 55% at 26% 4%, #ffffff26, transparent 60%)",
+          mixBlendMode: "soft-light",
+        }}
+        aria-hidden
+      />
+
       {/* filetes dourados (nervuras da lombada) */}
-      <span className="pointer-events-none absolute inset-x-2.5 top-9 h-px bg-[#e8c98a]/30" />
-      <span className="pointer-events-none absolute inset-x-2.5 bottom-12 h-px bg-[#e8c98a]/30" />
+      <span className="pointer-events-none absolute inset-x-3 top-11 h-px bg-[#e8c98a]/30" />
+      <span className="pointer-events-none absolute inset-x-3 bottom-12 h-px bg-[#e8c98a]/30" />
       <span className="text-[10px] tracking-widest text-[#e8c98a]/60" aria-hidden>✦</span>
 
       {/* nome */}
@@ -192,9 +228,9 @@ function BookSpine({ subject, height }: { subject: Subject; height: number }) {
         ) : (
           <p className="text-[10px] leading-tight text-white/70">sem<br />notas</p>
         )}
-        <p className="mt-1 text-[9px] text-white/65">{Math.round(o.weightDone * 100)}% do semestre</p>
+        <p className="mt-1 text-[9px] text-white/65">{pct}% do semestre</p>
         <div className="mx-auto mt-1.5 h-1 w-12 overflow-hidden rounded-full bg-black/30">
-          <div className="h-full rounded-full" style={{ width: `${Math.round(o.weightDone * 100)}%`, background: "#e8c98a" }} />
+          <div className="h-full rounded-full" style={{ width: `${pct}%`, background: "#e8c98a" }} />
         </div>
       </div>
 
@@ -216,25 +252,26 @@ function BookSpine({ subject, height }: { subject: Subject; height: number }) {
 function Shelf({ children }: { children: React.ReactNode }) {
   return (
     <div className="relative">
-      {/* holofotes embutidos sobre a prateleira */}
-      <div className="pointer-events-none absolute inset-x-6 top-0 flex justify-around" aria-hidden>
-        {Array.from({ length: 4 }).map((_, i) => (
+      {/* downlights quentes batendo nas lombadas */}
+      <div className="pointer-events-none absolute inset-x-4 -top-1 z-10 flex justify-around" aria-hidden>
+        {Array.from({ length: 5 }).map((_, i) => (
           <span
             key={i}
-            className="h-24 w-24 rounded-full"
-            style={{ background: "radial-gradient(circle at 50% 0%, #f0c08930, transparent 62%)" }}
+            className="h-32 w-28"
+            style={{ background: "radial-gradient(ellipse 60% 90% at 50% 0%, #ffcf9426, transparent 70%)" }}
           />
         ))}
       </div>
-      <div className="relative flex items-end gap-2.5 overflow-x-auto px-4 pb-3 pt-3 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+      <div className="relative flex items-end gap-2.5 overflow-x-auto px-4 pb-3 pt-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         {children}
       </div>
-      {/* tábua de madeira */}
+      {/* tábua de madeira com veios */}
       <div
         className="h-4 rounded-[2px]"
         style={{
-          background: "linear-gradient(180deg, #6a513a, #3e2f20)",
-          boxShadow: "inset 0 2px 0 #8a6e4f, 0 6px 16px #00000070",
+          backgroundImage:
+            "repeating-linear-gradient(90deg,#00000018 0 2px,transparent 2px 7px), linear-gradient(180deg,#7a5e44,#3e2f20)",
+          boxShadow: "inset 0 2px 0 #9a7b58, inset 0 -1px 0 #1c140d, 0 7px 18px #00000080",
         }}
       />
     </div>
@@ -292,23 +329,26 @@ export default function DisciplinasPage() {
           boxShadow: "0 18px 44px #00000060, inset 0 0 0 1px #00000060, inset 0 0 60px #00000050",
         }}
       >
-        {/* moldura: laterais de madeira + fundo escuro */}
+        {/* moldura: laterais de madeira + fundo escuro com veios */}
         <div
           className="flex gap-2 rounded-(--radius-md) p-1"
-          style={{ background: "linear-gradient(90deg, #3a2c1f, #4a3826 4%, #1c140d 12%, #1c140d 88%, #4a3826 96%, #3a2c1f)" }}
+          style={{
+            backgroundImage:
+              "repeating-linear-gradient(90deg,#00000026 0 1px,transparent 1px 26px), linear-gradient(90deg, #3a2c1f, #4a3826 4%, #1c140d 12%, #1c140d 88%, #4a3826 96%, #3a2c1f)",
+          }}
         >
-          <div className="flex-1 space-y-5 px-1 py-2">
+          <div className="relative flex-1 space-y-5 px-1 py-2">
+            {/* banho de luz quente da luminária no topo da estante */}
+            <span
+              className="pointer-events-none absolute inset-x-0 -top-1 z-10 h-24"
+              style={{ background: "radial-gradient(70% 100% at 50% 0%, #ffcf941c, transparent 70%)" }}
+              aria-hidden
+            />
             {rows.map((row, ri) => (
               <Shelf key={ri}>
-                {row.map((s, i) => {
-                  return (
-                    <BookSpine
-                      key={s.id}
-                      subject={s}
-                      height={244 + (i % 3) * 18}
-                    />
-                  );
-                })}
+                {row.map((s) => (
+                  <BookSpine key={s.id} subject={s} />
+                ))}
                 {/* o "+" mora na última prateleira */}
                 {ri === rows.length - 1 && addSlot}
               </Shelf>
