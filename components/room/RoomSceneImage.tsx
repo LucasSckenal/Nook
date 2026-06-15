@@ -52,6 +52,7 @@ const ZOOM_POINT: Record<ModuleKey, { x: number; y: number }> = {
   radio: { x: 70, y: 61 },
   estatisticas: { x: 61, y: 63 },
   foco: { x: 9, y: 62 },
+  ajustes: { x: 32, y: 38 },
 };
 
 interface Spot {
