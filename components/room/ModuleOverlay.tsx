@@ -32,8 +32,8 @@ export const MODULE_META: Record<
   calendario: { icon: "/Icones/Calendario.png", title: "Calendário", sub: "sua semana, sem sustos" },
   disciplinas: { icon: "/Icones/Livros.png", title: "Estante", sub: "disciplinas do semestre" },
   radio: { icon: "/Icones/Radio.png", title: "Rádio", sub: "sons do quarto" },
-  estatisticas: { icon: "/Icones/Grafico.png", title: "Caneca", sub: "seu esforço, com carinho" },
-  foco: { icon: "/Icones/Abajur.png", title: "Luminária", sub: "modo foco" },
+  estatisticas: { icon: "/Icones/Grafico.png", title: "Diário", sub: "seu esforço, com carinho" },
+  foco: { icon: "/Objetos/Cafe.png", title: "Café", sub: "modo foco" },
   ajustes: { icon: "/Icones/Abajur.png", title: "Ajustes", sub: "ambiente & conta" },
 };
 

@@ -1,6 +1,7 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { TaskDetail } from "@/components/TaskDetail";
 import { TaskRow } from "@/components/TaskRow";
 import { NotesPane } from "@/components/NotesPane";
@@ -17,9 +18,28 @@ export default function TarefasPage() {
   const addTask = useNook((s) => s.addTask);
   const notesCount = useNook((s) => s.notes.length);
 
-  const [pane, setPane] = useState<"tarefas" | "anotacoes">("tarefas");
+  // deep-link da busca (Ctrl+K): ?pane=anotacoes · ?task=<id> · ?note=<id>
+  const params = useSearchParams();
+  const paneParam = params.get("pane");
+  const taskParam = params.get("task");
+  const noteParam = params.get("note");
+
+  const [pane, setPane] = useState<"tarefas" | "anotacoes">(
+    paneParam === "anotacoes" || noteParam ? "anotacoes" : "tarefas"
+  );
   const [filter, setFilter] = useState<Filter>("semana");
-  const [detailId, setDetailId] = useState<string | null>(null);
+  const [detailId, setDetailId] = useState<string | null>(taskParam);
+
+  useEffect(() => {
+    if (taskParam) {
+      setPane("tarefas");
+      setDetailId(taskParam);
+    } else if (paneParam === "anotacoes" || noteParam) {
+      setPane("anotacoes");
+    } else if (paneParam === "tarefas") {
+      setPane("tarefas");
+    }
+  }, [paneParam, taskParam, noteParam]);
   const [title, setTitle] = useState("");
   const [subjectId, setSubjectId] = useState("");
   const [due, setDue] = useState("");
@@ -63,7 +83,7 @@ export default function TarefasPage() {
     return (
       <div className="mx-auto max-w-[960px]">
         <PaneSwitch pane={pane} setPane={setPane} notesCount={notesCount} />
-        <NotesPane />
+        <NotesPane initialId={noteParam ?? undefined} />
       </div>
     );
   }

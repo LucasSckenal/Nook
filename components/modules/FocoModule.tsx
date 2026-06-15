@@ -5,12 +5,13 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useMounted } from "@/components/useMounted";
 import { useNook } from "@/lib/store";
-import { iso, minutesToHuman, startOfWeek, todayIso } from "@/lib/dates";
+import { addDays, iso, minutesToHuman, startOfWeek, todayIso } from "@/lib/dates";
+import { toast } from "@/lib/toast";
 import type { Mood } from "@/lib/types";
 
 const MOOD_EMOJI: Record<Mood, string> = { leve: "🌤", ok: "⛅", pesado: "🌧" };
 
-type Phase = "setup" | "sessao" | "pausa" | "fim";
+type Phase = "setup" | "sessao" | "pausa" | "fim" | "revisao";
 
 function fmtClock(totalSec: number): string {
   const m = Math.floor(totalSec / 60);
@@ -31,6 +32,7 @@ export default function FocoModule() {
   const subjects = useNook((s) => s.subjects);
   const sessions = useNook((s) => s.sessions);
   const addSession = useNook((s) => s.addSession);
+  const addTask = useNook((s) => s.addTask);
   const toggleTask = useNook((s) => s.toggleTask);
   const radio = useNook((s) => s.radio);
   const setRadio = useNook((s) => s.setRadio);
@@ -95,6 +97,20 @@ export default function FocoModule() {
       mood,
     });
     if (taskDone && linkedTask && !linkedTask.done) toggleTask(linkedTask.id);
+    // havendo o que revisar, fecha o ciclo estudar → revisar; senão, volta ao quarto
+    if (subjectId || goal.trim()) setPhase("revisao");
+    else router.push("/");
+  }
+
+  function scheduleReview(days: number) {
+    const s = subjects.find((x) => x.id === subjectId);
+    const label = goal.trim() || s?.name || "o que estudei";
+    addTask({
+      title: `Revisar: ${label}`,
+      subjectId: subjectId || undefined,
+      due: iso(addDays(new Date(), days)),
+    });
+    toast({ message: `Revisão marcada para daqui a ${days} dias. 🌱` });
     router.push("/");
   }
 
@@ -332,6 +348,39 @@ export default function FocoModule() {
           <p className="mt-6 text-xs text-ink-low">
             qualquer resposta registra a sessão — até as pesadas valem
           </p>
+        </div>
+      )}
+
+      {phase === "revisao" && (
+        <div className="nk-reveal w-full max-w-[420px] text-center">
+          <p className="mb-2 text-3xl">🌱</p>
+          <h2 className="mb-1 font-display text-2xl text-ink-high">Marcar uma revisão?</h2>
+          <p className="mb-8 text-sm text-ink-mid">
+            A memória gosta de reencontros. Crio uma tarefa pra revisitar{" "}
+            <span className="text-ink-high">“{goal.trim() || sub?.name}”</span> daqui a alguns dias.
+          </p>
+
+          <div className="flex justify-center gap-3">
+            {[
+              { days: 2, label: "em 2 dias", hint: "revisão rápida" },
+              { days: 7, label: "em 7 dias", hint: "fixar" },
+            ].map((o) => (
+              <button
+                key={o.days}
+                onClick={() => scheduleReview(o.days)}
+                className="flex w-28 flex-col items-center gap-1 rounded-(--radius-md) bg-surface py-4 transition-all hover:bg-raised hover:shadow-[0_0_0_1.5px_#9caf8860]"
+              >
+                <span className="text-sm text-ink-high">{o.label}</span>
+                <span className="text-[11px] text-ink-low">{o.hint}</span>
+              </button>
+            ))}
+          </div>
+          <button
+            onClick={() => router.push("/")}
+            className="mt-6 text-xs text-ink-low transition-colors hover:text-ink-mid"
+          >
+            agora não
+          </button>
         </div>
       )}
     </div>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { subjectById, useNook } from "@/lib/store";
 import { toast } from "@/lib/toast";
 import { fmtShort } from "@/lib/dates";
@@ -70,7 +70,7 @@ function renderMd(src: string) {
   return blocks;
 }
 
-export function NotesPane() {
+export function NotesPane({ initialId }: { initialId?: string }) {
   const notes = useNook((s) => s.notes);
   const subjects = useNook((s) => s.subjects);
   const addNote = useNook((s) => s.addNote);
@@ -81,8 +81,13 @@ export function NotesPane() {
     () => [...notes].sort((a, b) => b.updatedAt.localeCompare(a.updatedAt)),
     [notes]
   );
-  const [selected, setSelected] = useState<string | null>(sorted[0]?.id ?? null);
+  const [selected, setSelected] = useState<string | null>(initialId ?? sorted[0]?.id ?? null);
   const [preview, setPreview] = useState(false);
+
+  // a busca (Ctrl+K) pode pedir uma anotação específica
+  useEffect(() => {
+    if (initialId) setSelected(initialId);
+  }, [initialId]);
 
   const note: Note | undefined = notes.find((n) => n.id === selected);
 

@@ -78,9 +78,9 @@ export default function EstatisticasPage() {
   if (sessions.length === 0) {
     return (
       <div className="mx-auto max-w-[560px] py-16 text-center">
-        <p className="mb-3 text-4xl" aria-hidden>☕</p>
+        <p className="mb-3 text-4xl" aria-hidden>📔</p>
         <h2 className="font-display text-xl text-ink-high">
-          A caneca ainda não tem folhas para segurar.
+          O diário ainda não tem páginas escritas.
         </h2>
         <p className="mx-auto mt-3 max-w-[440px] text-sm leading-relaxed text-ink-mid">
           Aqui vão aparecer suas horas de estudo, o equilíbrio entre as disciplinas
@@ -100,7 +100,7 @@ export default function EstatisticasPage() {
   return (
     <div className="mx-auto max-w-[900px]">
       <p className="nk-reveal mb-5 text-sm text-ink-mid">
-        as folhas que a caneca estava segurando — seu esforço, com carinho. ☕
+        as páginas do seu diário de estudos — seu esforço, com carinho. 📔
       </p>
       <div className="grid grid-cols-1 gap-5 md:grid-cols-3">
         {/* totais da semana — a folha com a marca da caneca */}

@@ -1,6 +1,6 @@
-import type { FocusSession, Subject, Task } from "./types";
+import type { FocusSession, Note, Subject, Task } from "./types";
 import { gradeOutlook } from "./store";
-import { relativeDay, todayIso } from "./dates";
+import { addDays, iso, relativeDay, todayIso } from "./dates";
 
 /**
  * Estuda com IA real (Google Gemini). A chave é do próprio usuário, guardada
@@ -15,38 +15,84 @@ const ENDPOINT = (key: string) =>
 const SYSTEM = `Você é a "Estuda", a assistente de estudos do app Nook — um quarto virtual de estudos acolhedor, à meia-luz, com lo-fi tocando.
 Sua personalidade: calorosa, calma, encorajadora, nunca alarmista nem culpabilizadora. Fala português do Brasil, em tom de colega gentil. Respostas curtas e úteis (no máximo ~6 linhas), com **negrito** em pontos-chave. Use no máximo 1 emoji, com parcimônia. Nunca invente notas, prazos ou disciplinas que não estejam no contexto. Quando sugerir um plano, seja concreto e realista com o tempo do estudante. Dias pesados também valem — reforce presença, não perfeição.`;
 
-function buildContext(data: { subjects: Subject[]; tasks: Task[]; sessions: FocusSession[] }): string {
+function buildContext(data: {
+  subjects: Subject[];
+  tasks: Task[];
+  sessions: FocusSession[];
+  notes: Note[];
+}): string {
   const today = todayIso();
+  const subName = (id?: string) => data.subjects.find((s) => s.id === id)?.name;
+
   const subs = data.subjects
     .map((s) => {
       const o = gradeOutlook(s);
       const provas = s.assessments
         .filter((a) => a.grade == null)
-        .map((a) => `${a.title} (${a.kind}, ${a.date}, peso ${Math.round(a.weight * 100)}%)`)
+        .sort((a, b) => a.date.localeCompare(b.date))
+        .map((a) => `${a.title} (${a.kind}, ${a.date} — ${relativeDay(a.date)}, peso ${Math.round(a.weight * 100)}%)`)
         .join("; ");
       const media = o.current != null ? `média parcial ${o.current.toFixed(1)}` : "sem notas ainda";
       return `- ${s.name}${s.code ? ` [${s.code}]` : ""}: ${media}. Avaliações em aberto: ${provas || "nenhuma"}.`;
     })
     .join("\n");
 
+  // próximas avaliações de todas as disciplinas, por proximidade
+  const upcoming = data.subjects
+    .flatMap((s) => s.assessments.filter((a) => a.grade == null && a.date >= today).map((a) => ({ s, a })))
+    .sort((x, y) => x.a.date.localeCompare(y.a.date))
+    .slice(0, 3)
+    .map(({ s, a }) => `${a.title} de ${s.name} (${relativeDay(a.date)})`)
+    .join("; ");
+
   const openTasks = data.tasks
     .filter((t) => !t.done)
+    .sort((a, b) => (a.due || "9999").localeCompare(b.due || "9999"))
     .slice(0, 20)
-    .map((t) => `- ${t.title}${t.due ? ` (prazo ${t.due}, ${relativeDay(t.due)})` : ""}`)
+    .map(
+      (t) =>
+        `- ${t.title}${t.due ? ` (prazo ${t.due}, ${relativeDay(t.due)})` : ""}${
+          subName(t.subjectId) ? ` [${subName(t.subjectId)}]` : ""
+        }`
+    )
     .join("\n");
 
-  const weekMin = data.sessions
-    .filter((s) => s.date >= today.slice(0, 8) + "01")
-    .reduce((a, s) => a + s.minutes, 0);
+  // foco do mês + equilíbrio por disciplina (14 dias) + humor recente
+  const monthStart = today.slice(0, 8) + "01";
+  const since14 = iso(addDays(new Date(), -14));
+  const minBy = new Map<string, number>();
+  let weekMin = 0;
+  for (const s of data.sessions) {
+    if (s.date >= monthStart) weekMin += s.minutes;
+    if (s.date >= since14 && s.subjectId) minBy.set(s.subjectId, (minBy.get(s.subjectId) || 0) + s.minutes);
+  }
+  const balance = data.subjects.map((s) => `${s.name}: ${minBy.get(s.id) || 0}min`).join("; ");
+  const recentMoods = data.sessions.filter((s) => s.mood).slice(-8);
+  const mood = {
+    leve: recentMoods.filter((m) => m.mood === "leve").length,
+    ok: recentMoods.filter((m) => m.mood === "ok").length,
+    pesado: recentMoods.filter((m) => m.mood === "pesado").length,
+  };
+
+  const notes = data.notes
+    .slice(0, 12)
+    .map((n) => `- ${n.title || "(sem título)"}${subName(n.subjectId) ? ` [${subName(n.subjectId)}]` : ""}`)
+    .join("\n");
 
   return `HOJE: ${today}.
 DISCIPLINAS:
 ${subs || "(nenhuma cadastrada)"}
 
+PRÓXIMAS AVALIAÇÕES: ${upcoming || "(nenhuma à vista)"}.
+
 TAREFAS EM ABERTO:
 ${openTasks || "(nenhuma)"}
 
-FOCO RECENTE: ~${weekMin} min registrados no mês.`;
+FOCO: ~${weekMin} min no mês. Equilíbrio (14 dias) — ${balance || "sem sessões"}.
+HUMOR recente das sessões: leve ${mood.leve}, ok ${mood.ok}, pesado ${mood.pesado}.
+
+ANOTAÇÕES NO CADERNO (títulos):
+${notes || "(nenhuma)"}`;
 }
 
 export interface GeminiTurn {
@@ -58,7 +104,7 @@ export async function estudaGemini(
   key: string,
   history: GeminiTurn[],
   question: string,
-  data: { subjects: Subject[]; tasks: Task[]; sessions: FocusSession[] }
+  data: { subjects: Subject[]; tasks: Task[]; sessions: FocusSession[]; notes: Note[] }
 ): Promise<string> {
   const contents = [
     // contexto + instrução como primeira fala do usuário, respondida pela modelo

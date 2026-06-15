@@ -67,7 +67,7 @@ const OBJECTS: SceneObject[] = [
   { key: "radio", src: "/Objetos/Radio.png", label: "📻 Rádio", left: 4.5, top: 42.9, width: 16, glow: "#c9a06a", z: 10 },
   { key: "dashboard", src: "/Objetos/Notebook.png", label: "💻 Computador", left: 36.9, top: 37.2, width: 23.6, glow: "#8fa8bf", z: 11 },
   { key: "foco", src: "/Objetos/Cafe.png", label: "🎯 Modo foco", left: 22.2, top: 58.1, width: 7.4, glow: "#e8a87c", z: 13 },
-  { key: "estatisticas", src: "/Objetos/Agenda.png", label: "📊 Estatísticas", left: 61.9, top: 59.7, width: 18, glow: "#c97b63", z: 12 },
+  { key: "estatisticas", src: "/Objetos/Agenda.png", label: "📔 Diário", left: 61.9, top: 59.7, width: 18, glow: "#c97b63", z: 12 },
   { key: "tarefas", src: "/Objetos/Caderno.png", label: "📝 Caderno", left: 33.7, top: 61.6, width: 24.2, glow: "#e8a87c", z: 14 },
   { key: "ajustes", src: "/Objetos/Luminaria.png", label: "💡 Ajustes", left: 24.9, top: 27.6, width: 14, glow: "#e8c98a", z: 8 },
 ];
@@ -76,25 +76,9 @@ const NOTES_AREA: Pos = { left: 62.6, top: 39, width: 14.6 };
 
 type Pos = { left: number; top: number; width: number };
 
-function buildSnippet(objs: SceneObject[], pos: Pos[], np: Pos): string {
-  const r = (n: number) => Math.round(n * 10) / 10;
-  const lines = objs.map((o, i) => {
-    const p = pos[i];
-    const parts = [
-      o.key ? `key: "${o.key}"` : null,
-      `src: "${o.src}"`,
-      o.label ? `label: ${JSON.stringify(o.label)}` : null,
-      `left: ${r(p.left)}`,
-      `top: ${r(p.top)}`,
-      `width: ${r(p.width)}`,
-      o.glow ? `glow: "${o.glow}"` : null,
-      o.z != null ? `z: ${o.z}` : null,
-    ].filter(Boolean);
-    return `  { ${parts.join(", ")} },`;
-  });
-  const arr = `const OBJECTS: SceneObject[] = [\n${lines.join("\n")}\n];`;
-  const na = `const NOTES_AREA: Pos = { left: ${r(np.left)}, top: ${r(np.top)}, width: ${r(np.width)} };`;
-  return `${arr}\n\n${na}`;
+/** chave de persistência de um objeto (módulo, ou decorativo por índice) */
+function layoutKey(o: SceneObject, i: number): string {
+  return o.key ?? `deco-${i}`;
 }
 
 export function RoomSceneObjects({
@@ -111,6 +95,10 @@ export function RoomSceneObjects({
   // avisos dinâmicos (post-its abaixo do calendário)
   const subjects = useNook((s) => s.subjects);
   const tasks = useNook((s) => s.tasks);
+  const radioPlaying = useNook((s) => s.radio.playing);
+  const roomLayout = useNook((s) => s.roomLayout);
+  const setRoomLayout = useNook((s) => s.setRoomLayout);
+  const resetRoomLayout = useNook((s) => s.resetRoomLayout);
   const notes = useMemo(() => {
     const today = todayIso();
     const out: { kind: string; text: string; sub?: string; color: string; href?: string }[] = [];
@@ -170,14 +158,34 @@ export function RoomSceneObjects({
     return () => window.clearInterval(id);
   }, []);
 
-  // posições editáveis (modo de ajuste)
+  // posições dos objetos — partem do padrão, sobrepostas pelo layout salvo
   const [pos, setPos] = useState<Pos[]>(() =>
-    OBJECTS.map((o) => ({ left: o.left, top: o.top, width: o.width }))
+    OBJECTS.map((o, i) => {
+      const saved = roomLayout[layoutKey(o, i)];
+      return saved ? { ...saved } : { left: o.left, top: o.top, width: o.width };
+    })
   );
-  const [notesPos, setNotesPos] = useState<Pos>(() => ({ ...NOTES_AREA }));
+  const [notesPos, setNotesPos] = useState<Pos>(() => ({ ...NOTES_AREA, ...roomLayout["notes"] }));
   const stageRef = useRef<HTMLDivElement>(null);
   const drag = useRef<{ t: number | "notes"; sx: number; sy: number; sl: number; st: number } | null>(null);
-  const [copied, setCopied] = useState(false);
+  const [saved, setSaved] = useState(false);
+
+  function saveLayout() {
+    const layout: Record<string, Pos> = {};
+    OBJECTS.forEach((o, i) => {
+      layout[layoutKey(o, i)] = { ...pos[i] };
+    });
+    layout["notes"] = { ...notesPos };
+    setRoomLayout(layout);
+    setSaved(true);
+    window.setTimeout(() => setSaved(false), 1600);
+  }
+
+  function resetLayout() {
+    resetRoomLayout();
+    setPos(OBJECTS.map((o) => ({ left: o.left, top: o.top, width: o.width })));
+    setNotesPos({ ...NOTES_AREA });
+  }
 
   function startDrag(e: React.PointerEvent, t: number | "notes", cur: Pos) {
     if (!edit) return;
@@ -212,7 +220,19 @@ export function RoomSceneObjects({
     });
   }
 
-  const zoomPt = zoomTarget && !edit ? ZOOM_POINT[zoomTarget] : null;
+  // ponto de mergulho da câmera — segue o objeto mesmo se o usuário o moveu
+  const zoomPt = useMemo(() => {
+    if (!zoomTarget || edit) return null;
+    const base = ZOOM_POINT[zoomTarget];
+    const i = OBJECTS.findIndex((o) => o.key === zoomTarget);
+    if (i < 0) return base;
+    const d = OBJECTS[i];
+    const p = pos[i];
+    return {
+      x: base.x + (p.left + p.width / 2 - (d.left + d.width / 2)),
+      y: base.y + (p.top - d.top),
+    };
+  }, [zoomTarget, edit, pos]);
   const camStyle: React.CSSProperties = zoomPt
     ? {
         transform: "scale(2.1)",
@@ -349,12 +369,50 @@ export function RoomSceneObjects({
                     }}
                     aria-hidden
                   />
+
+                  {/* vapor subindo do café (modo foco) */}
+                  {o.key === "foco" && (
+                    <span
+                      className="pointer-events-none absolute left-1/2 top-0 h-6 w-8 -translate-x-1/2 -translate-y-2"
+                      aria-hidden
+                    >
+                      {[0, 1, 2].map((k) => (
+                        <span
+                          key={k}
+                          className="nk-steam absolute bottom-0 rounded-full"
+                          style={{
+                            left: 8 + k * 6,
+                            width: 4,
+                            height: 12,
+                            background: "radial-gradient(circle, rgba(255,255,255,0.85), transparent 70%)",
+                            filter: "blur(1.5px)",
+                            animationDelay: `${k * 1000}ms`,
+                          }}
+                        />
+                      ))}
+                    </span>
+                  )}
+
+                  {/* LED do rádio quando está tocando */}
+                  {o.key === "radio" && radioPlaying && (
+                    <span
+                      className="nk-led-on pointer-events-none absolute h-1.5 w-1.5 rounded-full"
+                      style={{
+                        left: "21%",
+                        top: "33%",
+                        background: "#9caf88",
+                        boxShadow: "0 0 6px 1px #9caf88cc",
+                      }}
+                      aria-hidden
+                    />
+                  )}
+
                   <img
                     src={o.src}
                     alt=""
                     aria-hidden
                     draggable={false}
-                    className="w-full select-none drop-shadow-[0_10px_14px_#00000066] transition-transform duration-(--nk-dur-quick) group-hover:-translate-y-1.5 group-hover:scale-[1.04]"
+                    className="w-full select-none drop-shadow-[0_10px_14px_#00000066] transition-transform duration-(--nk-dur-quick) group-hover:-translate-y-1.5 group-hover:rotate-[-1.5deg] group-hover:scale-[1.04] group-active:scale-95"
                   />
                   <span className="nk-obj-label pointer-events-none absolute -top-8 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full bg-raised/95 px-3 py-1.5 text-sm text-ink-high opacity-0 shadow-[0_4px_16px_#00000060,0_0_0_1px_#ffffff12] transition-opacity">
                     {o.label}
@@ -443,30 +501,36 @@ export function RoomSceneObjects({
         }}
       />
 
-      {/* painel do modo de edição */}
+      {/* painel do modo "organizar o quarto" */}
       {edit && (
-        <div className="absolute right-3 top-3 z-[60] w-[330px] rounded-(--radius-md) bg-void/90 p-3 text-xs text-ink-mid shadow-[0_0_0_1px_#ffffff14] backdrop-blur-md">
-          <p className="mb-2 font-medium text-ink-high">🛠 Modo de ajuste</p>
-          <p className="mb-2 leading-relaxed text-ink-low">
-            Arraste os objetos. Scroll sobre um objeto redimensiona. Copie o array
-            abaixo e me mande (ou cole em <code>RoomSceneObjects.tsx</code>). Saia tirando o <code>?edit=1</code>.
+        <div className="absolute right-3 top-3 z-[60] w-[300px] rounded-(--radius-md) bg-void/90 p-4 text-xs text-ink-mid shadow-[0_0_0_1px_#ffffff14] backdrop-blur-md">
+          <p className="mb-1.5 font-display text-base text-ink-high">🪴 Organizando o quarto</p>
+          <p className="mb-3 leading-relaxed text-ink-low">
+            Arraste os objetos para onde quiser. Use o scroll sobre um objeto para
+            aumentar ou diminuir. Salve quando gostar do resultado.
           </p>
-          <textarea
-            readOnly
-            value={buildSnippet(OBJECTS, pos, notesPos)}
-            className="h-48 w-full resize-none rounded-(--radius-sm) bg-surface p-2 font-mono text-[10px] leading-tight text-ink-high focus:outline-none"
-            onFocus={(e) => e.currentTarget.select()}
-          />
-          <button
-            onClick={() => {
-              navigator.clipboard?.writeText(buildSnippet(OBJECTS, pos, notesPos));
-              setCopied(true);
-              window.setTimeout(() => setCopied(false), 1500);
-            }}
-            className="mt-2 w-full rounded-(--radius-sm) bg-amber py-1.5 text-sm font-medium text-void transition-opacity hover:opacity-90"
-          >
-            {copied ? "copiado! ✓" : "copiar array"}
-          </button>
+          <div className="flex flex-col gap-2">
+            <button
+              onClick={saveLayout}
+              className="w-full rounded-(--radius-sm) bg-amber py-2 text-sm font-medium text-void transition-opacity hover:opacity-90"
+            >
+              {saved ? "salvo! ✓" : "salvar layout"}
+            </button>
+            <div className="flex gap-2">
+              <button
+                onClick={resetLayout}
+                className="flex-1 rounded-(--radius-sm) bg-surface py-2 text-sm text-ink-mid transition-colors hover:text-ink-high"
+              >
+                restaurar padrão
+              </button>
+              <button
+                onClick={() => router.push("/")}
+                className="flex-1 rounded-(--radius-sm) bg-surface py-2 text-sm text-ink-mid transition-colors hover:text-ink-high"
+              >
+                concluir
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

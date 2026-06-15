@@ -170,6 +170,20 @@ export default function AjustesModule() {
           />
           <div className="flex items-center justify-between gap-4 py-3">
             <div>
+              <p className="text-sm text-ink-high">Organizar o quarto</p>
+              <p className="text-xs text-ink-low">
+                arraste os objetos para onde quiser — o seu cantinho, do seu jeito
+              </p>
+            </div>
+            <button
+              onClick={() => router.push("/?edit=1")}
+              className="shrink-0 rounded-(--radius-sm) bg-surface px-4 py-2 text-sm text-ink-mid shadow-[0_0_0_1px_#ffffff0a] transition-colors hover:text-ink-high"
+            >
+              organizar
+            </button>
+          </div>
+          <div className="flex items-center justify-between gap-4 py-3">
+            <div>
               <p className="text-sm text-ink-high">Refazer a apresentação</p>
               <p className="text-xs text-ink-low">
                 rever as boas-vindas e o tour pelos objetos do quarto

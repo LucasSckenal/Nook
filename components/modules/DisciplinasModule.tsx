@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { SlotEditor } from "@/components/SlotEditor";
 import { useMounted } from "@/components/useMounted";
-import { gradeOutlook, useNook } from "@/lib/store";
+import { gradeOutlook, semesterGPA, useNook } from "@/lib/store";
 import { useToasts } from "@/lib/toast";
 import { audioUiTick } from "@/lib/audio";
 import type { ClassSlot, Subject } from "@/lib/types";
@@ -21,6 +21,67 @@ const SPINE_COLORS = [
   "#a0c9c2",
 ];
 
+/** sugestões de emoji por área (o usuário também pode digitar/colar o seu) */
+const EMOJI_SUGGEST = [
+  "📖", "📐", "∫", "∑", "⚛", "🧪", "🧬", "🗄", "💻", "🌐",
+  "⚙️", "🎨", "🏛️", "⚖️", "🩺", "🧠", "🎭", "🎵", "📊", "🌱",
+];
+
+/** escolha de símbolo da disciplina — campo livre + sugestões */
+export function EmojiPicker({
+  value,
+  onChange,
+  fallback,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  fallback: string;
+}) {
+  return (
+    <div>
+      <div className="flex items-center gap-2">
+        <span
+          className="grid h-9 w-9 shrink-0 place-items-center rounded-(--radius-sm) bg-raised text-xl"
+          aria-hidden
+        >
+          {value || fallback}
+        </span>
+        <input
+          value={value}
+          onChange={(e) => onChange(e.target.value.slice(0, 8))}
+          placeholder="emoji (opcional)"
+          className="w-36 rounded-(--radius-sm) bg-raised px-3 py-2 text-sm text-ink-high placeholder:text-ink-low focus:outline-none"
+          aria-label="Emoji da disciplina"
+        />
+        {value && (
+          <button
+            type="button"
+            onClick={() => onChange("")}
+            className="text-xs text-ink-low transition-colors hover:text-clay"
+          >
+            usar automático
+          </button>
+        )}
+      </div>
+      <div className="mt-2 flex flex-wrap gap-1">
+        {EMOJI_SUGGEST.map((e) => (
+          <button
+            key={e}
+            type="button"
+            onClick={() => onChange(e)}
+            aria-label={`Usar ${e}`}
+            className={`grid h-8 w-8 place-items-center rounded-(--radius-sm) text-lg transition-colors hover:bg-surface ${
+              value === e ? "bg-surface ring-1 ring-amber/50" : ""
+            }`}
+          >
+            {e}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function NewSubjectForm({ onClose }: { onClose: () => void }) {
   const addSubject = useNook((s) => s.addSubject);
   const uiSounds = useNook((s) => s.uiSounds);
@@ -29,6 +90,7 @@ function NewSubjectForm({ onClose }: { onClose: () => void }) {
   const [name, setName] = useState("");
   const [code, setCode] = useState("");
   const [color, setColor] = useState(SPINE_COLORS[0]);
+  const [emoji, setEmoji] = useState("");
   const [professor, setProfessor] = useState("");
   const [room, setRoom] = useState("");
   const [slots, setSlots] = useState<ClassSlot[]>([]);
@@ -39,6 +101,7 @@ function NewSubjectForm({ onClose }: { onClose: () => void }) {
       name: name.trim(),
       code: code.trim() || undefined,
       color,
+      emoji: emoji.trim() || undefined,
       professor: professor.trim() || undefined,
       room: room.trim() || undefined,
       schedule: slots.filter((s) => s.start && s.end),
@@ -88,6 +151,10 @@ function NewSubjectForm({ onClose }: { onClose: () => void }) {
           <p className="mb-2 text-xs text-ink-low">horários de aula (aparecem no calendário)</p>
           <SlotEditor slots={slots} onChange={setSlots} />
         </div>
+        <div>
+          <p className="mb-2 text-xs text-ink-low">símbolo da disciplina</p>
+          <EmojiPicker value={emoji} onChange={setEmoji} fallback={subjectGlyph(name)} />
+        </div>
         <div className="flex items-center gap-2" role="radiogroup" aria-label="Cor da lombada">
           <span className="mr-1 text-xs text-ink-low">cor da lombada</span>
           {SPINE_COLORS.map((c) => (
@@ -126,7 +193,7 @@ function NewSubjectForm({ onClose }: { onClose: () => void }) {
 }
 
 /** símbolo da disciplina pela área (aproximação do mockup) */
-function subjectGlyph(name: string): string {
+export function subjectGlyph(name: string): string {
   const n = name.toLowerCase();
   if (n.includes("cálcul") || n.includes("calcul")) return "∫";
   if (n.includes("álgebra") || n.includes("algebra") || n.includes("linear")) return "∑";
@@ -154,7 +221,7 @@ function hashStr(str: string) {
 function BookSpine({ subject }: { subject: Subject }) {
   const c = subject.color;
   const o = gradeOutlook(subject);
-  const glyph = subjectGlyph(subject.name);
+  const glyph = subject.emoji || subjectGlyph(subject.name);
   const gradeColor = o.current == null ? "#cbb78f" : o.current >= 6 ? "#9caf88" : "#e0917a";
   const pct = Math.round(o.weightDone * 100);
 
@@ -197,14 +264,13 @@ function BookSpine({ subject }: { subject: Subject }) {
         aria-hidden
       />
 
-      {/* filetes dourados (nervuras da lombada) */}
-      <span className="pointer-events-none absolute inset-x-3 top-11 h-px bg-[#e8c98a]/30" />
+      {/* filete dourado (nervura inferior, acima da nota) */}
       <span className="pointer-events-none absolute inset-x-3 bottom-12 h-px bg-[#e8c98a]/30" />
-      <span className="text-[10px] tracking-widest text-[#e8c98a]/60" aria-hidden>✦</span>
+      <span className="mb-1 text-[10px] tracking-widest text-[#e8c98a]/60" aria-hidden>✦</span>
 
       {/* nome */}
       <p
-        className="mt-1 line-clamp-3 font-display text-[13px] font-medium leading-tight"
+        className="line-clamp-3 font-display text-[13px] font-medium leading-tight"
         style={{ color: "color-mix(in srgb, " + c + " 12%, #fff)" }}
       >
         {subject.name}
@@ -278,6 +344,61 @@ function Shelf({ children }: { children: React.ReactNode }) {
   );
 }
 
+/** uma gaveta de fichário (madeira) — o resumo da disciplina vira a etiqueta */
+function Drawer({ subject }: { subject: Subject }) {
+  const o = gradeOutlook(subject);
+  const glyph = subject.emoji || subjectGlyph(subject.name);
+  const gradeColor = o.current == null ? "#cbb78f" : o.current >= 6 ? "#9caf88" : "#e0917a";
+  return (
+    <Link
+      href={`/?open=disciplinas&id=${subject.id}`}
+      className="group relative flex items-center gap-3 overflow-hidden rounded-[5px] px-3 py-3 transition-transform duration-(--nk-dur-quick) hover:translate-y-[2px]"
+      style={{
+        backgroundImage:
+          "repeating-linear-gradient(90deg,#00000012 0 2px,transparent 2px 9px), linear-gradient(180deg,#6a5238,#4a3826)",
+        boxShadow: "inset 0 1px 0 #9a7b5866, inset 0 -3px 6px #00000070, 0 4px 10px #00000055",
+        borderLeft: `4px solid ${subject.color}`,
+      }}
+      title={subject.name}
+    >
+      {/* etiqueta (porta-etiqueta) com o símbolo */}
+      <span
+        className="grid h-9 w-9 shrink-0 place-items-center rounded-[4px] text-lg"
+        style={{
+          background: `color-mix(in srgb, ${subject.color} 28%, #efe4cb)`,
+          boxShadow: "inset 0 0 0 1px #00000025",
+        }}
+        aria-hidden
+      >
+        {glyph}
+      </span>
+      <div className="min-w-0 flex-1">
+        <p className="truncate text-sm font-medium text-[#f1e7cf]">{subject.name}</p>
+        {o.current != null ? (
+          <p className="text-xs text-[#cdbfa3]">
+            média{" "}
+            <span className="font-display text-base" style={{ color: gradeColor }}>
+              {o.current.toFixed(1)}
+            </span>
+            <span className="ml-1 text-[10px] text-[#a08e6f]">· {Math.round(o.weightDone * 100)}%</span>
+          </p>
+        ) : (
+          <p className="text-xs text-[#a08e6f]">sem notas ainda</p>
+        )}
+      </div>
+      {/* puxador de latão */}
+      <span
+        className="h-2.5 w-6 shrink-0 rounded-full transition-transform group-hover:translate-y-0.5"
+        style={{
+          background: "linear-gradient(180deg,#e8c98a,#9c7c44)",
+          boxShadow: "inset 0 1px 0 #fff3d0, 0 2px 3px #00000070",
+        }}
+        aria-hidden
+      />
+    </Link>
+  );
+}
+
 export default function DisciplinasPage() {
   const mounted = useMounted();
   const subjects = useNook((s) => s.subjects);
@@ -321,24 +442,37 @@ export default function DisciplinasPage() {
           : `${subjects.length} disciplina${subjects.length > 1 ? "s" : ""} neste semestre. Cada lombada é uma porta.`}
       </p>
 
-      {/* a estante de madeira */}
+      {/* o armário das disciplinas: prateleiras de livros em cima,
+          placa do CR e gavetas (resumo) embaixo — um móvel só */}
       <div
-        className="nk-reveal nk-reveal-1 rounded-(--radius-lg) p-3"
+        className="nk-reveal nk-reveal-1 rounded-(--radius-lg) p-2"
         style={{
-          background: "linear-gradient(180deg, #2c2118, #211911)",
+          backgroundImage:
+            "linear-gradient(90deg,#2a1f15,#3a2c1f 3%,#241a11 9%,#241a11 91%,#3a2c1f 97%,#2a1f15)",
           boxShadow: "0 18px 44px #00000060, inset 0 0 0 1px #00000060, inset 0 0 60px #00000050",
         }}
       >
-        {/* moldura: laterais de madeira + fundo escuro com veios */}
+        {/* cornija superior do armário */}
         <div
-          className="flex gap-2 rounded-(--radius-md) p-1"
+          className="mb-1.5 h-3 rounded-[3px]"
           style={{
             backgroundImage:
-              "repeating-linear-gradient(90deg,#00000026 0 1px,transparent 1px 26px), linear-gradient(90deg, #3a2c1f, #4a3826 4%, #1c140d 12%, #1c140d 88%, #4a3826 96%, #3a2c1f)",
+              "repeating-linear-gradient(90deg,#00000018 0 2px,transparent 2px 8px), linear-gradient(180deg,#6a5238,#3e2f20)",
+            boxShadow: "inset 0 2px 0 #9a7b58, 0 3px 8px #00000060",
+          }}
+          aria-hidden
+        />
+
+        {/* corpo do armário (fundo escuro com leve veio) */}
+        <div
+          className="rounded-(--radius-md) p-1"
+          style={{
+            backgroundImage:
+              "repeating-linear-gradient(90deg,#00000026 0 1px,transparent 1px 26px), linear-gradient(90deg, #3a2c1f, #2a1f14 4%, #1c140d 12%, #1c140d 88%, #2a1f14 96%, #3a2c1f)",
           }}
         >
-          <div className="relative flex-1 space-y-5 px-1 py-2">
-            {/* banho de luz quente da luminária no topo da estante */}
+          {/* prateleiras com os livros */}
+          <div className="relative space-y-5 px-1 py-2">
             <span
               className="pointer-events-none absolute inset-x-0 -top-1 z-10 h-24"
               style={{ background: "radial-gradient(70% 100% at 50% 0%, #ffcf941c, transparent 70%)" }}
@@ -354,7 +488,54 @@ export default function DisciplinasPage() {
               </Shelf>
             ))}
           </div>
+
+          {/* divisória + placa de latão (CR) + gavetas (resumo das disciplinas) */}
+          {!empty && (
+            <div className="mt-2 border-t-2 border-[#1c140d] pt-3">
+              {(() => {
+                const { cr, counted } = semesterGPA(subjects);
+                if (cr == null) return null;
+                return (
+                  <div
+                    className="mx-1 mb-3 flex items-center gap-4 rounded-[4px] px-4 py-2.5"
+                    style={{
+                      backgroundImage: "linear-gradient(180deg,#d8b463,#9c7c44)",
+                      boxShadow: "inset 0 1px 0 #fff3d0aa, inset 0 -2px 5px #00000055, 0 3px 8px #00000055",
+                    }}
+                  >
+                    <div className="flex flex-col">
+                      <span className="text-[10px] font-semibold uppercase tracking-[0.15em] text-[#3a2c14]">
+                        coeficiente do semestre
+                      </span>
+                      <span className="text-[10px] text-[#5a4622]">
+                        média de {counted} disciplina{counted > 1 ? "s" : ""} com nota
+                        {subjects.some((s) => s.credits) ? " · ponderada por créditos" : ""}
+                      </span>
+                    </div>
+                    <span className="ml-auto font-display text-3xl text-[#241a0c]">{cr.toFixed(1)}</span>
+                  </div>
+                );
+              })()}
+
+              <div className="grid grid-cols-1 gap-2.5 px-1 pb-2 sm:grid-cols-2 lg:grid-cols-3">
+                {subjects.map((s) => (
+                  <Drawer key={s.id} subject={s} />
+                ))}
+              </div>
+            </div>
+          )}
         </div>
+
+        {/* base do armário */}
+        <div
+          className="mt-1.5 h-3 rounded-[3px]"
+          style={{
+            backgroundImage:
+              "repeating-linear-gradient(90deg,#00000018 0 2px,transparent 2px 8px), linear-gradient(180deg,#4a3826,#241a11)",
+            boxShadow: "inset 0 1px 0 #6a513a, 0 6px 14px #00000070",
+          }}
+          aria-hidden
+        />
       </div>
 
       {adding && <NewSubjectForm onClose={() => setAdding(false)} />}
@@ -370,38 +551,6 @@ export default function DisciplinasPage() {
         </div>
       )}
 
-      {/* resumo de notas */}
-      {!empty && (
-        <div className="nk-reveal nk-reveal-2 mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {subjects.map((s) => {
-            const o = gradeOutlook(s);
-            return (
-              <Link key={s.id} href={`/?open=disciplinas&id=${s.id}`} className="nk-card p-5 transition-colors hover:bg-raised/60">
-                <div className="mb-2 flex items-center gap-2">
-                  <span className="h-2.5 w-2.5 rounded-full" style={{ background: s.color }} />
-                  <p className="truncate text-sm font-medium text-ink-high">{s.name}</p>
-                </div>
-                {o.current != null ? (
-                  <p className="text-sm text-ink-mid">
-                    média parcial{" "}
-                    <span
-                      className="font-display text-xl"
-                      style={{ color: o.current >= 6 ? "#9caf88" : "#c97b63" }}
-                    >
-                      {o.current.toFixed(1)}
-                    </span>{" "}
-                    <span className="text-xs text-ink-low">
-                      ({Math.round(o.weightDone * 100)}% do semestre avaliado)
-                    </span>
-                  </p>
-                ) : (
-                  <p className="text-sm text-ink-low">ainda sem notas lançadas</p>
-                )}
-              </Link>
-            );
-          })}
-        </div>
-      )}
     </div>
   );
 }

@@ -32,6 +32,96 @@ export const OBJETIVOS_INTERFACE = [
   },
 ];
 
+/* ── Problema, contexto e público-alvo (Etapa 1) ─────────────────────── */
+
+export const PROBLEMA = {
+  declaracao:
+    "Estudantes universitários enfrentam dificuldade em organizar disciplinas, prazos, estudos independentes e atividades extracurriculares — espalhando tudo entre várias ferramentas frias que resolvem o “o quê”, mas ignoram a vontade de voltar a usá-las.",
+  contexto: [
+    "A rotina acadêmica combina muitas fontes (planos de ensino, provas, trabalhos, horários) que raramente convivem num só lugar.",
+    "Apps de produtividade genéricos exigem montagem e manutenção — viram mais uma tarefa.",
+    "Ferramentas acadêmicas tendem a ser corporativas e impessoais; a dimensão emocional (ansiedade, procrastinação) fica de fora.",
+    "A procrastinação acadêmica é documentada como ligada a fatores emocionais, não só de gestão de tempo.",
+  ],
+  publico: [
+    { icon: "🎓", title: "Estudante de graduação", desc: "17–26 anos, 1 a 6 disciplinas por semestre, fluente em apps e sensível à estética." },
+    { icon: "🎧", title: "Perfil “LoFi / cozy”", desc: "Estuda em casa, valoriza ambiente acolhedor; foge de interfaces frias e gamificação agressiva." },
+    { icon: "⏳", title: "Procrastinador ansioso", desc: "Organiza por impulso, estuda na véspera; precisa de reforço gentil, não de cobrança." },
+  ],
+};
+
+/* ── Benchmarking (desk research de concorrentes) ────────────────────── */
+
+export const BENCH_PRODUCTS = ["Notion", "Google Agenda", "Todoist", "Forest", "Nook"];
+
+export const BENCH_CRITERIA: { criterio: string; valores: ("sim" | "parcial" | "nao")[] }[] = [
+  { criterio: "Organização acadêmica (disciplinas/notas)", valores: ["parcial", "nao", "nao", "nao", "sim"] },
+  { criterio: "Prazos, provas e calendário", valores: ["parcial", "sim", "sim", "nao", "sim"] },
+  { criterio: "Foco / pomodoro integrado", valores: ["nao", "nao", "nao", "sim", "sim"] },
+  { criterio: "Acompanhamento de desempenho", valores: ["parcial", "nao", "parcial", "parcial", "sim"] },
+  { criterio: "Acolhimento emocional / ambiente", valores: ["nao", "nao", "nao", "parcial", "sim"] },
+  { criterio: "Tudo em um só lugar (sem montar)", valores: ["nao", "parcial", "parcial", "nao", "sim"] },
+];
+
+export const BENCH_GAPS = [
+  "Nenhum concorrente reúne organização acadêmica + foco + acolhimento num só ambiente.",
+  "Os genéricos exigem configuração manual; os acadêmicos são frios.",
+  "Desempenho e bem-estar quase nunca aparecem juntos.",
+  "Lacuna central: um espaço que o estudante queira reabrir — onde organizar seja consequência, não esforço.",
+];
+
+/* ── Arquitetura da informação e fluxos (Etapa 3) ────────────────────── */
+
+export const NAV_MAP = {
+  centro: "Quarto (cena 2.5D)",
+  nos: [
+    { icon: "💻", nome: "Computador", desc: "painel + Estuda (IA)" },
+    { icon: "📓", nome: "Caderno", desc: "tarefas & anotações" },
+    { icon: "📅", nome: "Calendário", desc: "mês & grade de aulas" },
+    { icon: "📚", nome: "Estante", desc: "disciplinas, notas, CR, faltas" },
+    { icon: "📻", nome: "Rádio", desc: "sons de foco" },
+    { icon: "📔", nome: "Diário", desc: "esforço & constância" },
+    { icon: "☕", nome: "Café", desc: "modo foco" },
+    { icon: "💡", nome: "Luminária", desc: "ambiente & conta" },
+  ],
+};
+
+export const HIERARQUIA = [
+  "Quarto (raiz) — ponto de partida e retorno; nada “sai” da cena.",
+  "Módulo (objeto) — aberto por ?open=<chave>, nasce do próprio objeto.",
+  "Detalhe (item) — disciplina, tarefa ou nota específica (?id · ?task · ?note).",
+  "Ações — criar, editar, concluir; sempre reversíveis (desfazer).",
+];
+
+export const FLUXOS = [
+  { titulo: "Abrir um módulo", passos: ["Clicar no objeto (ou Ctrl+K / G+tecla)", "Câmera mergulha no objeto", "Módulo emerge como vidro", "Esc ou clicar fora retorna ao quarto"] },
+  { titulo: "Lançar uma nota", passos: ["Estante → disciplina", "Avaliações & notas → digitar nota", "Média parcial e CR recalculam", "✓ aparece no calendário"] },
+  { titulo: "Foco → revisão", passos: ["Café (foco) → escolher tempo", "Sessão → humor ao terminar", "Oferta de revisão (+2/+7 dias)", "Vira tarefa no calendário"] },
+];
+
+/* ── Cenários de uso (narrativos, ancorados na persona Marina) ───────── */
+
+export const CENARIOS = [
+  {
+    titulo: "A véspera que deixou de ser susto",
+    contexto: "Domingo à noite · prova de Cálculo na quinta",
+    narrativa:
+      "Marina abre o Nook e vê o post-it “em 4 dias”, sem alarme vermelho. Pede um plano à Estuda, que distribui três blocos até quarta. Liga o rádio LoFi, entra em foco por 50 min e, ao terminar, aceita revisar em 2 dias. Vai dormir sabendo o que fazer amanhã.",
+  },
+  {
+    titulo: "A semana inteira num olhar",
+    contexto: "Segunda de manhã · muitas entregas",
+    narrativa:
+      "Na grade de aulas ela vê os horários fixos; no calendário, as provas e tarefas, com os dias passados riscados. Cria uma tarefa direto no dia da entrega e segue para a primeira aula tranquila.",
+  },
+  {
+    titulo: "O quarto do jeito dela",
+    contexto: "Primeiro acesso",
+    narrativa:
+      "Depois das boas-vindas, Marina arrasta os objetos para aproximar o café da luminária, troca o tema para “Madrugada de chuva” e sente que o espaço é dela — não mais uma ferramenta.",
+  },
+];
+
 /* ── Mapa de stakeholders (matriz poder × interesse — Mendelow) ───────── */
 
 export type StakeQuadrant =

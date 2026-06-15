@@ -2,24 +2,40 @@
 
 import Link from "next/link";
 import { useState } from "react";
+import { Arquitetura } from "@/components/processo/Arquitetura";
+import { Benchmarking } from "@/components/processo/Benchmarking";
 import { EmpathyMap } from "@/components/processo/EmpathyMap";
 import { HeuristicasTab } from "@/components/processo/Heuristicas";
 import { JourneyMap } from "@/components/processo/JourneyMap";
 import { StakeholderMatrix } from "@/components/processo/StakeholderMatrix";
-import { OBJETIVOS_INTERFACE } from "@/lib/processo";
+import { Wireframes } from "@/components/processo/Wireframes";
+import { CENARIOS, OBJETIVOS_INTERFACE, PROBLEMA } from "@/lib/processo";
 
-type Tab = "objetivos" | "stakeholders" | "empatia" | "jornada" | "heuristicas";
+type Tab =
+  | "problema"
+  | "objetivos"
+  | "benchmarking"
+  | "stakeholders"
+  | "empatia"
+  | "jornada"
+  | "arquitetura"
+  | "wireframes"
+  | "heuristicas";
 
 const TABS: { id: Tab; label: string }[] = [
+  { id: "problema", label: "Problema & contexto" },
   { id: "objetivos", label: "Objetivos" },
+  { id: "benchmarking", label: "Benchmarking" },
   { id: "stakeholders", label: "Stakeholders" },
   { id: "empatia", label: "Mapa de empatia" },
-  { id: "jornada", label: "Jornada do usuário" },
+  { id: "jornada", label: "Jornada & cenários" },
+  { id: "arquitetura", label: "Arquitetura" },
+  { id: "wireframes", label: "Wireframes" },
   { id: "heuristicas", label: "Avaliação heurística" },
 ];
 
 export default function ProcessoPage() {
-  const [tab, setTab] = useState<Tab>("objetivos");
+  const [tab, setTab] = useState<Tab>("problema");
 
   return (
     <div className="min-h-screen bg-room">
@@ -36,7 +52,7 @@ export default function ProcessoPage() {
             <div className="flex items-baseline gap-3">
               <h1 className="font-display text-xl text-ink-high">✦ Processo de design</h1>
               <span className="hidden text-sm text-ink-low sm:inline">
-                Etapa 1 — investigação & definição do problema
+                investigação · arquitetura · avaliação
               </span>
             </div>
           </div>
@@ -74,10 +90,14 @@ export default function ProcessoPage() {
         </div>
 
         <div className="nk-reveal nk-reveal-2">
+          {tab === "problema" && <ProblemaTab />}
           {tab === "objetivos" && <Objetivos />}
+          {tab === "benchmarking" && <BenchmarkingTab />}
           {tab === "stakeholders" && <StakeholdersTab />}
           {tab === "empatia" && <EmpathyMap />}
           {tab === "jornada" && <JornadaTab />}
+          {tab === "arquitetura" && <ArquiteturaTab />}
+          {tab === "wireframes" && <WireframesTab />}
           {tab === "heuristicas" && <HeuristicasTab />}
         </div>
       </main>
@@ -90,6 +110,90 @@ function SectionIntro({ title, children }: { title: string; children: React.Reac
     <div className="mb-5">
       <h2 className="font-display text-2xl text-ink-high">{title}</h2>
       <p className="mt-1 max-w-2xl text-sm leading-relaxed text-ink-mid">{children}</p>
+    </div>
+  );
+}
+
+function ProblemaTab() {
+  return (
+    <div>
+      <SectionIntro title="Problema & contexto">
+        O ponto de partida da investigação: o que dói, em que contexto, e para quem.
+      </SectionIntro>
+
+      {/* declaração do problema */}
+      <div className="nk-card mb-5 border-l-2 border-clay/60 p-6">
+        <p className="text-xs uppercase tracking-wider text-ink-low">Declaração do problema</p>
+        <p className="mt-2 text-base leading-relaxed text-ink-high">{PROBLEMA.declaracao}</p>
+      </div>
+
+      <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
+        {/* contextualização */}
+        <div className="nk-card p-6">
+          <h3 className="mb-3 font-display text-lg text-ink-high">Contextualização</h3>
+          <ul className="space-y-2">
+            {PROBLEMA.contexto.map((c, i) => (
+              <li key={i} className="flex gap-2.5 text-sm leading-relaxed text-ink-mid">
+                <span className="mt-0.5 shrink-0 text-mist">•</span>
+                <span>{c}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+
+        {/* público-alvo */}
+        <div className="nk-card p-6">
+          <h3 className="mb-3 font-display text-lg text-ink-high">Público-alvo</h3>
+          <div className="space-y-3">
+            {PROBLEMA.publico.map((p) => (
+              <div key={p.title} className="flex gap-3">
+                <span className="text-2xl" aria-hidden>
+                  {p.icon}
+                </span>
+                <div>
+                  <p className="text-sm font-medium text-ink-high">{p.title}</p>
+                  <p className="text-xs leading-relaxed text-ink-low">{p.desc}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function BenchmarkingTab() {
+  return (
+    <div>
+      <SectionIntro title="Benchmarking">
+        Comparação com ferramentas que os estudantes já usam (desk research). O Nook nasce na
+        interseção que ninguém cobre: organização acadêmica + foco + acolhimento.
+      </SectionIntro>
+      <Benchmarking />
+    </div>
+  );
+}
+
+function ArquiteturaTab() {
+  return (
+    <div>
+      <SectionIntro title="Arquitetura da informação & fluxos">
+        Como a informação se organiza e como o usuário se move — sem nunca “sair” do quarto.
+      </SectionIntro>
+      <Arquitetura />
+    </div>
+  );
+}
+
+function WireframesTab() {
+  return (
+    <div>
+      <SectionIntro title="Wireframes">
+        Esqueleto lo-fi das telas principais — layout, hierarquia e fluxo antes do acabamento
+        visual. O protótipo de alta fidelidade é o próprio app (o quarto).
+      </SectionIntro>
+      <Wireframes />
     </div>
   );
 }
@@ -135,6 +239,23 @@ function JornadaTab() {
         vale da ansiedade inicial e a subida sustentada conforme o Nook atua em cada ponto de dor.
       </SectionIntro>
       <JourneyMap />
+
+      {/* cenários de uso — narrativas ancoradas na persona */}
+      <div className="mt-8">
+        <h3 className="mb-1 font-display text-xl text-ink-high">Cenários de uso</h3>
+        <p className="mb-4 max-w-2xl text-sm text-ink-mid">
+          Três situações concretas em que a Marina vive a jornada acima dentro do Nook.
+        </p>
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+          {CENARIOS.map((c) => (
+            <div key={c.titulo} className="nk-card p-5">
+              <p className="text-[11px] uppercase tracking-wider text-amber">{c.contexto}</p>
+              <h4 className="mt-1.5 text-base font-medium text-ink-high">{c.titulo}</h4>
+              <p className="mt-2 text-sm leading-relaxed text-ink-mid">{c.narrativa}</p>
+            </div>
+          ))}
+        </div>
+      </div>
     </div>
   );
 }

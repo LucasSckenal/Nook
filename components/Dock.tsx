@@ -18,8 +18,8 @@ const ITEMS: DockItem[] = [
   { kind: "module", key: "calendario", icon: "/Icones/Calendario.png", label: "Calendário" },
   { kind: "module", key: "disciplinas", icon: "/Icones/Livros.png", label: "Disciplinas" },
   { kind: "module", key: "radio", icon: "/Icones/Radio.png", label: "Rádio" },
-  { kind: "module", key: "estatisticas", icon: "/Icones/Grafico.png", label: "Estatísticas" },
-  { kind: "module", key: "foco", icon: "/Icones/Abajur.png", label: "Foco" },
+  { kind: "module", key: "estatisticas", icon: "/Icones/Grafico.png", label: "Diário" },
+  { kind: "module", key: "foco", icon: "/Objetos/Cafe.png", label: "Foco" },
 ];
 
 const STATION_NAMES: Record<string, string> = {
@@ -94,7 +94,10 @@ export function Dock({
             >
               <span className="nk-led-on inline-block h-1.5 w-1.5 rounded-full bg-moss" />
               {STATION_NAMES[radio.station]}
-              <span className="text-ink-low">⏸</span>
+              <svg viewBox="0 0 24 24" className="h-3 w-3 text-ink-low" fill="currentColor" aria-hidden>
+                <rect x="6" y="5" width="4" height="14" rx="1.2" />
+                <rect x="14" y="5" width="4" height="14" rx="1.2" />
+              </svg>
             </button>
           </>
         )}

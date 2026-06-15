@@ -237,10 +237,19 @@ export default function RadioPage() {
               />
               <button
                 onClick={() => setRadio({ playing: !radio.playing })}
-                className="flex h-14 w-14 items-center justify-center rounded-full bg-amber text-xl text-void shadow-[0_4px_18px_#e8a87c50,inset_0_-2px_4px_#00000040] transition-transform hover:scale-105 active:scale-95"
+                className="flex h-14 w-14 items-center justify-center rounded-full bg-amber text-void shadow-[0_4px_18px_#e8a87c50,inset_0_-2px_4px_#00000040] transition-transform hover:scale-105 active:scale-95"
                 aria-label={radio.playing ? "Pausar" : "Tocar"}
               >
-                {radio.playing ? "⏸" : "▶"}
+                {radio.playing ? (
+                  <svg viewBox="0 0 24 24" className="h-6 w-6" fill="currentColor" aria-hidden>
+                    <rect x="6" y="5" width="4" height="14" rx="1.2" />
+                    <rect x="14" y="5" width="4" height="14" rx="1.2" />
+                  </svg>
+                ) : (
+                  <svg viewBox="0 0 24 24" className="h-6 w-6 translate-x-[1px]" fill="currentColor" aria-hidden>
+                    <path d="M8 5.5 19.5 12 8 18.5 Z" />
+                  </svg>
+                )}
               </button>
               <p className="w-20 text-xs leading-tight text-ink-low">{current.desc}</p>
             </div>

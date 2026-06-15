@@ -10,7 +10,15 @@ interface Item {
   id: string;
   label: string;
   hint?: string;
-  group: "Navegação" | "Tarefas" | "Disciplinas" | "Criar";
+  group:
+    | "Navegação"
+    | "Tarefas"
+    | "Disciplinas"
+    | "Anotações"
+    | "Avaliações"
+    | "Materiais"
+    | "Criar";
+  search?: string; // texto extra p/ casar na busca (ex.: conteúdo da nota)
   run: () => void;
 }
 
@@ -29,6 +37,7 @@ export function CommandPalette({
   useFocusTrap(trapRef, open);
   const subjects = useNook((s) => s.subjects);
   const tasks = useNook((s) => s.tasks);
+  const notes = useNook((s) => s.notes);
   const addTask = useNook((s) => s.addTask);
 
   useEffect(() => {
@@ -39,11 +48,13 @@ export function CommandPalette({
     }
   }, [open]);
 
-  const items = useMemo<Item[]>(() => {
+  const { base, all } = useMemo(() => {
     const go = (path: string) => () => {
       router.push(path);
       onClose();
     };
+    const subName = (id?: string) => subjects.find((s) => s.id === id)?.name;
+
     const nav: Item[] = [
       { id: "n-home", label: "Voltar ao quarto", hint: "Esc", group: "Navegação", run: go("/") },
       { id: "n-dash", label: "Abrir dashboard", hint: "G D", group: "Navegação", run: go("/?open=dashboard") },
@@ -60,11 +71,12 @@ export function CommandPalette({
     const subItems: Item[] = subjects.map((s) => ({
       id: `s-${s.id}`,
       label: s.name,
-      hint: s.code,
+      hint: s.code || "disciplina",
       group: "Disciplinas",
       run: go(`/?open=disciplinas&id=${s.id}`),
     }));
-    const taskItems: Item[] = tasks
+    // resumo quando não há busca: poucas tarefas abertas
+    const recentTasks: Item[] = tasks
       .filter((t) => !t.done)
       .slice(0, 8)
       .map((t) => ({
@@ -72,15 +84,57 @@ export function CommandPalette({
         label: t.title,
         hint: t.due ? relativeDay(t.due) : undefined,
         group: "Tarefas",
-        run: go("/?open=tarefas"),
+        run: go(`/?open=tarefas&task=${t.id}`),
       }));
-    return [...nav, ...subItems, ...taskItems];
-  }, [subjects, tasks, router, onClose]);
+
+    // universo buscável: todas as tarefas, notas, avaliações e materiais
+    const allTasks: Item[] = tasks.map((t) => ({
+      id: `t-${t.id}`,
+      label: t.title,
+      hint: t.done ? "concluída" : t.due ? relativeDay(t.due) : "sem prazo",
+      group: "Tarefas",
+      search: t.notes,
+      run: go(`/?open=tarefas&task=${t.id}`),
+    }));
+    const noteItems: Item[] = notes.map((n) => ({
+      id: `nt-${n.id}`,
+      label: n.title.trim() || "Sem título",
+      hint: subName(n.subjectId) ?? "anotação",
+      group: "Anotações",
+      search: n.content,
+      run: go(`/?open=tarefas&pane=anotacoes&note=${n.id}`),
+    }));
+    const assessItems: Item[] = subjects.flatMap((s) =>
+      s.assessments.map((a) => ({
+        id: `a-${a.id}`,
+        label: a.title,
+        hint: `${s.name} · ${a.kind}`,
+        group: "Avaliações" as const,
+        run: go(`/?open=disciplinas&id=${s.id}`),
+      }))
+    );
+    const materialItems: Item[] = subjects.flatMap((s) =>
+      s.materials.map((m) => ({
+        id: `m-${m.id}`,
+        label: m.title,
+        hint: s.name,
+        group: "Materiais" as const,
+        run: go(`/?open=disciplinas&id=${s.id}`),
+      }))
+    );
+
+    return {
+      base: [...nav, ...subItems, ...recentTasks],
+      all: [...nav, ...subItems, ...allTasks, ...noteItems, ...assessItems, ...materialItems],
+    };
+  }, [subjects, tasks, notes, router, onClose]);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
-    if (!q) return items;
-    const hits = items.filter((i) => i.label.toLowerCase().includes(q));
+    if (!q) return base;
+    const hits = all
+      .filter((i) => i.label.toLowerCase().includes(q) || (i.search?.toLowerCase().includes(q) ?? false))
+      .slice(0, 40);
     // captura rápida: texto livre vira tarefa ("amanhã"/"hoje" viram prazo)
     if (q.length > 2) {
       let due: string | undefined;
@@ -104,7 +158,7 @@ export function CommandPalette({
       });
     }
     return hits;
-  }, [query, items, addTask, onClose]);
+  }, [query, base, all, addTask, onClose]);
 
   useEffect(() => setActive(0), [query]);
 

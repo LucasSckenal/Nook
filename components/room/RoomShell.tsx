@@ -37,8 +37,9 @@ const QUICK_NAV: { href: string; icon: string; label: string }[] = [
   { href: "/?open=calendario", icon: "/Icones/Calendario.png", label: "Calendário" },
   { href: "/?open=disciplinas", icon: "/Icones/Livros.png", label: "Estante" },
   { href: "/?open=radio", icon: "/Icones/Radio.png", label: "Rádio" },
-  { href: "/?open=estatisticas", icon: "/Icones/Grafico.png", label: "Caneca" },
-  { href: "/?open=foco", icon: "/Icones/Abajur.png", label: "Modo foco" },
+  { href: "/?open=estatisticas", icon: "/Icones/Grafico.png", label: "Diário" },
+  { href: "/?open=foco", icon: "/Objetos/Cafe.png", label: "Modo foco" },
+  { href: "/?open=ajustes", icon: "/Icones/Abajur.png", label: "Ajustes" },
   { href: "/processo", icon: "/Icones/Foto.png", label: "Processo de design" },
 ];
 
@@ -230,6 +231,21 @@ export function RoomShell() {
           >
             ?
           </button>
+          <Link
+            href="/?edit=1"
+            aria-label="Organizar o quarto"
+            title="Organizar o quarto"
+            className="flex items-center rounded-md px-1.5 py-1 text-ink-low transition-colors hover:text-amber"
+          >
+            <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+              <path d="M5 9l-3 3 3 3" />
+              <path d="M9 5l3-3 3 3" />
+              <path d="M15 19l-3 3-3-3" />
+              <path d="M19 9l3 3-3 3" />
+              <path d="M2 12h20" />
+              <path d="M12 2v20" />
+            </svg>
+          </Link>
           <Link
             href="/?open=ajustes"
             aria-label="Ajustes"

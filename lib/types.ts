@@ -27,11 +27,16 @@ export interface Subject {
   name: string;
   code: string;
   color: string;
+  emoji?: string; // símbolo escolhido pelo usuário (senão, glifo automático)
   professor?: string;
   room?: string;
   schedule: ClassSlot[];
   assessments: Assessment[];
   materials: Material[];
+  targetGrade?: number; // meta de nota p/ fechar (padrão 6.0)
+  credits?: number; // créditos/peso da disciplina no CR do semestre
+  absences?: number; // faltas registradas
+  totalClasses?: number; // total de aulas no semestre (p/ regra dos 75%)
 }
 
 export interface Task {

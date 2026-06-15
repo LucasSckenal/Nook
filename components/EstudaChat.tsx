@@ -30,6 +30,7 @@ export function EstudaChat() {
   const subjects = useNook((s) => s.subjects);
   const tasks = useNook((s) => s.tasks);
   const sessions = useNook((s) => s.sessions);
+  const notes = useNook((s) => s.notes);
   const geminiKey = useNook((s) => s.geminiKey);
   const live = geminiKey.trim().length > 0;
 
@@ -59,7 +60,7 @@ export function EstudaChat() {
 
     if (live) {
       try {
-        const reply = await estudaGemini(geminiKey, history, q, { subjects, tasks, sessions });
+        const reply = await estudaGemini(geminiKey, history, q, { subjects, tasks, sessions, notes });
         setMsgs((m) => [...m, { role: "estuda", text: reply }]);
       } catch (err) {
         const msg = err instanceof Error ? err.message : "algo deu errado";

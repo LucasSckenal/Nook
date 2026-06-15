@@ -14,6 +14,22 @@ const MESES = [
 ];
 const DIAS = ["seg", "ter", "qua", "qui", "sex", "sáb", "dom"];
 
+/** X "riscado a caneta" sobre um dia que já passou — leve traço torto à mão */
+function DayCross({ faint = false }: { faint?: boolean }) {
+  return (
+    <svg
+      viewBox="0 0 100 100"
+      aria-hidden
+      className={`pointer-events-none absolute left-1/2 top-1/2 h-[58px] w-[58px] -translate-x-1/2 -translate-y-1/2 -rotate-3 ${
+        faint ? "text-ink-faint/40" : "text-amber/35"
+      }`}
+    >
+      <path d="M20 18 C45 42, 58 60, 82 80" stroke="currentColor" strokeWidth="6" strokeLinecap="round" fill="none" />
+      <path d="M80 20 C56 44, 42 58, 18 82" stroke="currentColor" strokeWidth="6" strokeLinecap="round" fill="none" />
+    </svg>
+  );
+}
+
 export default function CalendarioPage() {
   const mounted = useMounted();
   const router = useRouter();
@@ -24,6 +40,7 @@ export default function CalendarioPage() {
   const [selected, setSelected] = useState<string | null>(null);
   const [quickTitle, setQuickTitle] = useState("");
   const [quickSubject, setQuickSubject] = useState("");
+  const [tab, setTab] = useState<"mes" | "aulas">("mes");
 
   const today = todayIso();
 
@@ -52,6 +69,7 @@ export default function CalendarioPage() {
           kind: "prova" | "trabalho";
           subjectId: string;
           subjectName: string;
+          done: boolean;
         }[];
         tarefas: number;
       }
@@ -79,6 +97,7 @@ export default function CalendarioPage() {
             kind: a.kind,
             subjectId: s.id,
             subjectName: s.name,
+            done: a.grade != null,
           });
         }
       }
@@ -94,8 +113,93 @@ export default function CalendarioPage() {
   const selectedInfo = selected ? byDay.get(selected) : null;
   const selectedTasks = selected ? tasks.filter((t) => !t.done && t.due === selected) : [];
 
+  // alternância mês ↔ grade de aulas
+  const viewToggle = (
+    <div className="flex gap-1 rounded-(--radius-md) bg-surface p-1">
+      {(["mes", "aulas"] as const).map((v) => (
+        <button
+          key={v}
+          onClick={() => setTab(v)}
+          className={`rounded-(--radius-sm) px-3 py-1.5 text-sm transition-colors ${
+            tab === v ? "bg-raised text-ink-high" : "text-ink-mid hover:text-ink-high"
+          }`}
+        >
+          {v === "mes" ? "mês" : "grade de aulas"}
+        </button>
+      ))}
+    </div>
+  );
+
+  // ── grade horária semanal (montada a partir dos horários das disciplinas) ──
+  if (tab === "aulas") {
+    const slots = subjects.flatMap((s) => s.schedule.map((c) => ({ c, s })));
+    const hasSat = slots.some(({ c }) => c.weekday === 6);
+    const hasSun = slots.some(({ c }) => c.weekday === 0);
+    const dayIdx = [0, 1, 2, 3, 4, ...(hasSat ? [5] : []), ...(hasSun ? [6] : [])];
+    return (
+      <div className="mx-auto max-w-[1040px]">
+        <div className="nk-reveal mb-4 flex flex-wrap items-center justify-between gap-3">
+          {viewToggle}
+          <h2 className="font-display text-2xl text-ink-high">Grade de aulas</h2>
+          <span className="text-xs text-ink-low">as suas aulas da semana</span>
+        </div>
+        {slots.length === 0 ? (
+          <div className="nk-card nk-reveal nk-reveal-1 px-4 py-16 text-center">
+            <p className="mb-1 text-2xl">🗓️</p>
+            <p className="text-sm text-ink-mid">Nenhum horário de aula cadastrado ainda.</p>
+            <p className="mt-1 text-xs text-ink-low">
+              adicione os horários dentro de cada disciplina, na estante.
+            </p>
+          </div>
+        ) : (
+          <div
+            className="nk-reveal nk-reveal-1 grid gap-3"
+            style={{ gridTemplateColumns: `repeat(${dayIdx.length}, minmax(0, 1fr))` }}
+          >
+            {dayIdx.map((i) => {
+              const jsDay = (i + 1) % 7;
+              const dayClasses = slots
+                .filter(({ c }) => c.weekday === jsDay)
+                .sort((a, b) => a.c.start.localeCompare(b.c.start));
+              return (
+                <div key={i}>
+                  <p className="mb-2 text-center text-[11px] uppercase tracking-wider text-ink-low">{DIAS[i]}</p>
+                  <div className="space-y-2">
+                    {dayClasses.length === 0 ? (
+                      <p className="py-2 text-center text-xs text-ink-faint">—</p>
+                    ) : (
+                      dayClasses.map(({ c, s }, j) => (
+                        <button
+                          key={j}
+                          onClick={() => router.push(`/?open=disciplinas&id=${s.id}`)}
+                          className="block w-full rounded-(--radius-sm) p-2 text-left transition-transform hover:scale-[1.02]"
+                          style={{ background: `${s.color}1f`, boxShadow: `inset 3px 0 0 ${s.color}` }}
+                          title={`${s.name}${s.room ? ` · ${s.room}` : ""}`}
+                        >
+                          <p className="text-xs font-medium tabular-nums" style={{ color: s.color }}>
+                            {c.start}–{c.end}
+                          </p>
+                          <p className="truncate text-xs text-ink-high">
+                            {s.emoji ? `${s.emoji} ` : ""}
+                            {s.name}
+                          </p>
+                          {s.room && <p className="truncate text-[10px] text-ink-low">{s.room}</p>}
+                        </button>
+                      ))
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+    );
+  }
+
   return (
     <div className="mx-auto max-w-[1040px]">
+      <div className="nk-reveal mb-4">{viewToggle}</div>
       {/* cabeçalho do mês */}
       <div className="nk-reveal mb-4 flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-2">
@@ -147,13 +251,31 @@ export default function CalendarioPage() {
           {view.days.map(({ date, inMonth }, i) => {
             const info = byDay.get(date);
             const isToday = date === today;
+            const isPast = date < today;
             const isSelected = date === selected;
             const dayNum = Number(date.slice(8));
+
+            // descrição para leitores de tela: o que mora neste dia
+            const labelParts: string[] = [`Dia ${dayNum}`];
+            if (isToday) labelParts.push("hoje");
+            else if (isPast) labelParts.push("já passou");
+            if (info?.aulas.length)
+              labelParts.push(`${info.aulas.length} aula${info.aulas.length > 1 ? "s" : ""}`);
+            if (info?.provas.length) {
+              const done = info.provas.filter((p) => p.done).length;
+              labelParts.push(
+                `${info.provas.length} avaliação${info.provas.length > 1 ? "ões" : ""}` +
+                  (done ? ` (${done} com nota)` : "")
+              );
+            }
+            if (info?.tarefas)
+              labelParts.push(`${info.tarefas} tarefa${info.tarefas > 1 ? "s" : ""}`);
+
             return (
               <button
                 key={date}
                 onClick={() => setSelected(isSelected ? null : date)}
-                aria-label={`Dia ${dayNum}`}
+                aria-label={labelParts.join(", ")}
                 className={`relative flex min-h-[84px] flex-col items-stretch gap-1 border-ink-faint/15 p-1.5 text-left transition-colors sm:min-h-[92px] ${
                   i % 7 !== 0 ? "border-l" : ""
                 } ${i >= 7 ? "border-t" : ""} ${
@@ -185,10 +307,12 @@ export default function CalendarioPage() {
                 {info?.provas.slice(0, 2).map((p, j) => (
                   <span
                     key={j}
-                    className="truncate rounded-[4px] px-1 py-0.5 text-[10px] leading-tight"
+                    className={`truncate rounded-[4px] px-1 py-0.5 text-[10px] leading-tight ${
+                      p.done ? "line-through opacity-55" : ""
+                    }`}
                     style={{ background: `${p.color}26`, color: p.color }}
                   >
-                    {p.kind === "prova" ? "◉" : "◍"} {p.title}
+                    {p.done ? "✓" : p.kind === "prova" ? "◉" : "◍"} {p.title}
                   </span>
                 ))}
                 {info && info.provas.length > 2 && (
@@ -199,6 +323,9 @@ export default function CalendarioPage() {
                     ▪ {info.tarefas} tarefa{info.tarefas > 1 ? "s" : ""}
                   </span>
                 )}
+
+                {/* dia que já passou: riscado a caneta */}
+                {isPast && <DayCross faint={!inMonth} />}
               </button>
             );
           })}
@@ -236,9 +363,10 @@ export default function CalendarioPage() {
                     className="flex items-center gap-2.5 text-left transition-colors hover:text-amber"
                     title={`Abrir ${p.subjectName}`}
                   >
-                    <span style={{ color: p.color }}>{p.kind === "prova" ? "◉" : "◍"}</span>
-                    <span className="text-ink-high">{p.title}</span>
+                    <span style={{ color: p.color }}>{p.done ? "✓" : p.kind === "prova" ? "◉" : "◍"}</span>
+                    <span className={`text-ink-high ${p.done ? "line-through opacity-60" : ""}`}>{p.title}</span>
                     <span className="text-xs text-ink-low">{p.subjectName}</span>
+                    {p.done && <span className="text-xs text-moss">nota lançada</span>}
                   </button>
                   <button
                     onClick={() => {

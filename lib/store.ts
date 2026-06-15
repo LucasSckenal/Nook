@@ -6,6 +6,7 @@ import type {
   Assessment,
   ClassSlot,
   FocusSession,
+  Material,
   Note,
   RadioState,
   StationId,
@@ -31,6 +32,8 @@ interface NookState {
   uiSounds: boolean;
   calmMotion: boolean;
   geminiKey: string; // chave da API do Gemini (opcional) — Estuda com IA real
+  /** posições custom dos objetos do quarto (por chave de objeto); vazio = padrão */
+  roomLayout: Record<string, { left: number; top: number; width: number }>;
 
   // tarefas
   addTask: (t: { title: string; subjectId?: string; due?: string }) => void;
@@ -50,6 +53,7 @@ interface NookState {
     name: string;
     code?: string;
     color: string;
+    emoji?: string;
     professor?: string;
     room?: string;
     schedule?: ClassSlot[];
@@ -66,6 +70,10 @@ interface NookState {
   removeAssessment: (subjectId: string, assessmentId: string) => void;
   setGrade: (subjectId: string, assessmentId: string, grade: number | null) => void;
 
+  // materiais (links por enquanto; arquivos chegam com o Storage)
+  addMaterial: (subjectId: string, m: { title: string; kind: Material["kind"]; url?: string }) => void;
+  removeMaterial: (subjectId: string, materialId: string) => void;
+
   // foco
   addSession: (s: Omit<FocusSession, "id" | "date">) => void;
 
@@ -80,6 +88,8 @@ interface NookState {
   setUiSounds: (v: boolean) => void;
   setCalmMotion: (v: boolean) => void;
   setGeminiKey: (k: string) => void;
+  setRoomLayout: (layout: Record<string, { left: number; top: number; width: number }>) => void;
+  resetRoomLayout: () => void;
   resetDemo: () => void;
 
   /** substitui os dados do semestre (vindos da nuvem) sem tocar nas prefs locais */
@@ -131,6 +141,7 @@ export const useNook = create<NookState>()(
       uiSounds: true,
       calmMotion: false,
       geminiKey: "",
+      roomLayout: {},
       radio: {
         station: "lofi",
         playing: false,
@@ -221,6 +232,7 @@ export const useNook = create<NookState>()(
               name: s.name,
               code: s.code ?? "",
               color: s.color,
+              emoji: s.emoji,
               professor: s.professor,
               room: s.room,
               schedule: s.schedule ?? [],
@@ -285,6 +297,24 @@ export const useNook = create<NookState>()(
           ),
         })),
 
+      addMaterial: (subjectId, m) =>
+        set((st) => ({
+          subjects: st.subjects.map((sub) =>
+            sub.id === subjectId
+              ? { ...sub, materials: [...sub.materials, { ...m, id: nextId() }] }
+              : sub
+          ),
+        })),
+
+      removeMaterial: (subjectId, materialId) =>
+        set((st) => ({
+          subjects: st.subjects.map((sub) =>
+            sub.id === subjectId
+              ? { ...sub, materials: sub.materials.filter((mt) => mt.id !== materialId) }
+              : sub
+          ),
+        })),
+
       addSession: (sess) =>
         set((s) => ({
           sessions: [...s.sessions, { ...sess, id: nextId(), date: todayIso() }],
@@ -300,6 +330,8 @@ export const useNook = create<NookState>()(
       setUiSounds: (uiSounds) => set({ uiSounds }),
       setCalmMotion: (calmMotion) => set({ calmMotion }),
       setGeminiKey: (geminiKey) => set({ geminiKey }),
+      setRoomLayout: (roomLayout) => set({ roomLayout }),
+      resetRoomLayout: () => set({ roomLayout: {} }),
 
       resetDemo: () =>
         set({
@@ -329,8 +361,9 @@ export function subjectById(subjects: Subject[], id?: string) {
   return subjects.find((s) => s.id === id);
 }
 
-/** média atual + nota necessária nas avaliações restantes para fechar em 6.0 */
+/** média atual + nota necessária nas avaliações restantes para fechar na meta */
 export function gradeOutlook(sub: Subject) {
+  const target = sub.targetGrade ?? 6;
   let earned = 0;
   let weightDone = 0;
   for (const a of sub.assessments) {
@@ -341,12 +374,29 @@ export function gradeOutlook(sub: Subject) {
   }
   const weightLeft = Math.max(0, 1 - weightDone);
   const current = weightDone > 0 ? earned / weightDone : null;
-  const neededAvg = weightLeft > 0 ? (6 - earned) / weightLeft : null;
+  const neededAvg = weightLeft > 0 ? (target - earned) / weightLeft : null;
   return {
     current,
     weightDone,
+    target,
     neededAvg: neededAvg == null ? null : Math.max(0, neededAvg),
     closed: weightLeft === 0,
     finalIfClosed: weightLeft === 0 ? earned : null,
   };
+}
+
+/** coeficiente do semestre (CR): média das disciplinas com nota, ponderada por créditos */
+export function semesterGPA(subjects: Subject[]) {
+  let sum = 0;
+  let weight = 0;
+  let counted = 0;
+  for (const s of subjects) {
+    const o = gradeOutlook(s);
+    if (o.current == null) continue;
+    const c = s.credits && s.credits > 0 ? s.credits : 1;
+    sum += o.current * c;
+    weight += c;
+    counted += 1;
+  }
+  return { cr: weight > 0 ? sum / weight : null, counted };
 }

@@ -48,10 +48,10 @@ export function SignInCard({
     return (
       <div className="rounded-(--radius-lg) bg-surface p-6 text-sm leading-relaxed text-ink-mid shadow-[0_0_0_1px_#ffffff0a]">
         <p className="mb-2 font-display text-lg text-ink-high">
-          🔑 Sua conta (em breve)
+          🔑 Login indisponível neste ambiente
         </p>
         <p>
-          O Firebase ainda não foi configurado neste ambiente. Defina as chaves{" "}
+          O login com conta existe, mas o Firebase não foi configurado aqui. Defina as chaves{" "}
           <code className="text-ink-high">NEXT_PUBLIC_FIREBASE_*</code> (veja{" "}
           <code className="text-ink-high">.env.example</code>) para ligar o login
           e a sincronização entre dispositivos.
