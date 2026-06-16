@@ -12,8 +12,8 @@
   /* tintas */
   --color-ink-high: #e8e4da;
   --color-ink-mid: #a8a49a;
-  --color-ink-low: #6b6a66;
-  --color-ink-faint: #3d4150;
+  --color-ink-low: #8a8983; /* AA: ~4.5:1+ sobre void/room/surface */
+  --color-ink-faint: #3d4150; /* só decorativo (linhas, pontos) — não texto */
 
   /* luz */
   --color-amber: #e8a87c;

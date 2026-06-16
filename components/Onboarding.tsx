@@ -41,13 +41,13 @@ const TOUR: TourStop[] = [
   {
     key: "disciplinas", r: 175,
     title: "📚 A estante",
-    text: "Cada lombada é uma disciplina. Notas, provas e a média que você precisa.",
+    text: "Cada lombada é uma disciplina: notas, faltas e a média do semestre (CR) num lugar só.",
     bx: 55, by: 52,
   },
   {
     key: "foco", r: 130,
     title: "☕ O café",
-    text: "Toque na caneca para uma sessão de foco: a luz do quarto apaga e só o relógio fica.",
+    text: "Toque na xícara para uma sessão de foco: a luz do quarto apaga e só o relógio fica.",
     bx: 48, by: 24,
   },
 ];

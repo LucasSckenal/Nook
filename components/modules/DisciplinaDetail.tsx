@@ -362,9 +362,13 @@ export function DisciplinaDetail({ id }: { id: string }) {
                   className="group/item flex flex-wrap items-center gap-3 rounded-(--radius-md) bg-raised/50 px-4 py-3"
                 >
                   <span
-                    className="h-2 w-2 shrink-0 rounded-full"
-                    style={{ background: a.kind === "prova" ? "#c97b63" : "#8fa8bf" }}
-                  />
+                    className="shrink-0 text-sm leading-none"
+                    style={{ color: a.kind === "prova" ? "#c97b63" : "#8fa8bf" }}
+                    title={a.kind === "prova" ? "prova" : "entrega"}
+                    aria-label={a.kind === "prova" ? "prova" : "entrega"}
+                  >
+                    {a.kind === "prova" ? "◉" : "◍"}
+                  </span>
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-sm text-ink-high">{a.title}</p>
                     <p className="text-xs text-ink-low">

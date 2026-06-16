@@ -8,18 +8,18 @@ import { useMounted } from "./useMounted";
 import type { ModuleKey } from "./room/ModuleOverlay";
 
 type DockItem =
-  | { kind: "module"; key: ModuleKey; icon: string; label: string }
-  | { kind: "route"; href: string; icon: string; label: string };
+  | { kind: "module"; key: ModuleKey; icon: string; label: string; shortcut?: string }
+  | { kind: "route"; href: string; icon: string; label: string; shortcut?: string };
 
 const ITEMS: DockItem[] = [
-  { kind: "route", href: "/", icon: "/Icones/Casa.png", label: "Quarto" },
-  { kind: "module", key: "dashboard", icon: "/Icones/Monitor.png", label: "Dashboard" },
-  { kind: "module", key: "tarefas", icon: "/Icones/Livro.png", label: "Tarefas" },
-  { kind: "module", key: "calendario", icon: "/Icones/Calendario.png", label: "Calendário" },
-  { kind: "module", key: "disciplinas", icon: "/Icones/Livros.png", label: "Disciplinas" },
-  { kind: "module", key: "radio", icon: "/Icones/Radio.png", label: "Rádio" },
-  { kind: "module", key: "estatisticas", icon: "/Icones/Grafico.png", label: "Diário" },
-  { kind: "module", key: "foco", icon: "/Objetos/Cafe.png", label: "Foco" },
+  { kind: "route", href: "/", icon: "/Icones/Casa.png", label: "Quarto", shortcut: "Esc" },
+  { kind: "module", key: "dashboard", icon: "/Icones/Monitor.png", label: "Dashboard", shortcut: "G D" },
+  { kind: "module", key: "tarefas", icon: "/Icones/Livro.png", label: "Tarefas", shortcut: "G T" },
+  { kind: "module", key: "calendario", icon: "/Icones/Calendario.png", label: "Calendário", shortcut: "G C" },
+  { kind: "module", key: "disciplinas", icon: "/Icones/Livros.png", label: "Disciplinas", shortcut: "G E" },
+  { kind: "module", key: "radio", icon: "/Icones/Radio.png", label: "Rádio", shortcut: "G R" },
+  { kind: "module", key: "estatisticas", icon: "/Icones/Grafico.png", label: "Diário", shortcut: "G S" },
+  { kind: "module", key: "foco", icon: "/Objetos/Cafe.png", label: "Foco", shortcut: "F" },
 ];
 
 const STATION_NAMES: Record<string, string> = {
@@ -61,7 +61,7 @@ export function Dock({
             <button
               key={item.kind === "route" ? item.href : item.key}
               onClick={go}
-              title={item.label}
+              title={item.shortcut ? `${item.label} (${item.shortcut})` : item.label}
               className={`group relative flex h-9 w-9 shrink-0 items-center justify-center rounded-(--radius-md) transition-all duration-(--nk-dur-instant) hover:-translate-y-0.5 hover:bg-surface sm:h-11 sm:w-11 ${
                 active ? "bg-surface" : ""
               }`}
@@ -76,8 +76,13 @@ export function Dock({
               {active && (
                 <span className="absolute -bottom-1 h-1 w-1 rounded-full bg-amber" />
               )}
-              <span className="pointer-events-none absolute -top-9 whitespace-nowrap rounded-md bg-raised px-2 py-1 text-xs text-ink-mid opacity-0 shadow-[0_0_0_1px_#ffffff0a] transition-opacity group-hover:opacity-100">
+              <span className="pointer-events-none absolute -top-9 flex items-center gap-1.5 whitespace-nowrap rounded-md bg-raised px-2 py-1 text-xs text-ink-mid opacity-0 shadow-[0_0_0_1px_#ffffff0a] transition-opacity group-hover:opacity-100">
                 {item.label}
+                {item.shortcut && (
+                  <kbd className="rounded bg-surface px-1 font-mono text-[10px] text-ink-low">
+                    {item.shortcut}
+                  </kbd>
+                )}
               </span>
             </button>
           );

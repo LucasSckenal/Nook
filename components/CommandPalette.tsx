@@ -17,10 +17,27 @@ interface Item {
     | "Anotações"
     | "Avaliações"
     | "Materiais"
+    | "Ajuda"
     | "Criar";
   search?: string; // texto extra p/ casar na busca (ex.: conteúdo da nota)
-  run: () => void;
+  answer?: string; // se presente, é um tópico de ajuda: expande a resposta inline
+  run: () => void; // ação principal — nos tópicos de ajuda, leva ao lugar certo
 }
+
+/** Central de ajuda pesquisável (Nielsen #10): dúvidas conceituais de "como
+ * faço X", buscáveis pela pergunta e pela resposta, com atalho para o lugar. */
+const HELP: { q: string; a: string; path?: string }[] = [
+  { q: "Como adiciono uma disciplina?", a: "Abra a estante e toque em “+ guardar na estante”. Cada disciplina vira uma lombada com notas, faltas e materiais.", path: "/?open=disciplinas" },
+  { q: "Como marco uma falta?", a: "Abra a disciplina → seção “Meta & frequência” → use o + ao lado de “faltas”. O medidor avisa quando você se aproxima do limite de 25%.", path: "/?open=disciplinas" },
+  { q: "Como defino a meta de nota de uma disciplina?", a: "Na disciplina, em “Meta & frequência”, ajuste “meta de nota p/ fechar”. A projeção passa a calcular quanto você ainda precisa.", path: "/?open=disciplinas" },
+  { q: "Onde vejo o CR do semestre?", a: "Na estante, a plaqueta de latão mostra o coeficiente do semestre (CR), ponderado pelos créditos de cada disciplina.", path: "/?open=disciplinas" },
+  { q: "Como entro no modo foco?", a: "Tecle F em qualquer lugar, ou toque na xícara de café no quarto. A luz baixa e só o relógio fica.", path: "/?open=foco" },
+  { q: "Como crio uma tarefa rápido?", a: "Aqui mesmo: digite o que precisa fazer e escolha “Criar tarefa”. Escrever “hoje” ou “amanhã” já vira prazo.", path: "/?open=tarefas" },
+  { q: "Como mudo o tema do quarto?", a: "Em Ajustes, escolha entre os temas (entardecer, madrugada, lampião…). Mudam só a luz — tudo continua no lugar.", path: "/?open=ajustes" },
+  { q: "Como reduzo as animações?", a: "Em Ajustes, ligue “movimento calmo”. O quarto também respeita o “reduzir movimento” do seu sistema automaticamente.", path: "/?open=ajustes" },
+  { q: "Como faço backup dos meus dados?", a: "Em Ajustes, use exportar/importar (JSON). Tudo fica salvo neste aparelho; o backup leva seus dados para outro.", path: "/?open=ajustes" },
+  { q: "Como reorganizo os objetos do quarto?", a: "No quarto, use o atalho “organizar o quarto” (ou abra /?edit=1): arraste os objetos e use o scroll para redimensionar.", path: "/?edit=1" },
+];
 
 export function CommandPalette({
   open,
@@ -32,6 +49,7 @@ export function CommandPalette({
   const router = useRouter();
   const [query, setQuery] = useState("");
   const [active, setActive] = useState(0);
+  const [openHelp, setOpenHelp] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const trapRef = useRef<HTMLDivElement>(null);
   useFocusTrap(trapRef, open);
@@ -44,9 +62,16 @@ export function CommandPalette({
     if (open) {
       setQuery("");
       setActive(0);
+      setOpenHelp(null);
       setTimeout(() => inputRef.current?.focus(), 10);
     }
   }, [open]);
+
+  /** tópicos de ajuda expandem a resposta inline; o resto executa direto */
+  function activate(item: Item) {
+    if (item.answer) setOpenHelp((id) => (id === item.id ? null : item.id));
+    else item.run();
+  }
 
   const { base, all } = useMemo(() => {
     const go = (path: string) => () => {
@@ -123,9 +148,19 @@ export function CommandPalette({
       }))
     );
 
+    const helpItems: Item[] = HELP.map((h, i) => ({
+      id: `help-${i}`,
+      label: h.q,
+      hint: "ajuda",
+      group: "Ajuda",
+      search: `${h.a} ajuda dúvida como faço`,
+      answer: h.a,
+      run: h.path ? go(h.path) : onClose,
+    }));
+
     return {
       base: [...nav, ...subItems, ...recentTasks],
-      all: [...nav, ...subItems, ...allTasks, ...noteItems, ...assessItems, ...materialItems],
+      all: [...nav, ...subItems, ...allTasks, ...noteItems, ...assessItems, ...materialItems, ...helpItems],
     };
   }, [subjects, tasks, notes, router, onClose]);
 
@@ -190,12 +225,13 @@ export function CommandPalette({
               e.preventDefault();
               setActive((a) => Math.max(a - 1, 0));
             } else if (e.key === "Enter") {
-              filtered[active]?.run();
+              const it = filtered[active];
+              if (it) activate(it);
             } else if (e.key === "Escape") {
               onClose();
             }
           }}
-          placeholder="Buscar, navegar ou criar tarefa…"
+          placeholder="Buscar, navegar, criar tarefa ou pedir ajuda…"
           className="w-full bg-transparent px-5 py-4 text-ink-high placeholder:text-ink-low focus:outline-none"
           style={{ boxShadow: "none" }}
         />
@@ -205,21 +241,44 @@ export function CommandPalette({
               Nada por aqui. Tente outro termo.
             </p>
           )}
-          {filtered.map((item, i) => (
-            <button
-              key={item.id}
-              onClick={item.run}
-              onMouseEnter={() => setActive(i)}
-              className={`flex w-full items-center justify-between rounded-(--radius-sm) px-3 py-2.5 text-left text-sm transition-colors ${
-                i === active ? "bg-raised text-ink-high" : "text-ink-mid"
-              }`}
-            >
-              <span className="truncate">{item.label}</span>
-              <span className="ml-4 shrink-0 text-xs text-ink-low">
-                {item.hint ?? item.group}
-              </span>
-            </button>
-          ))}
+          {filtered.map((item, i) => {
+            const expanded = item.answer != null && openHelp === item.id;
+            return (
+              <div key={item.id}>
+                <button
+                  onClick={() => activate(item)}
+                  onMouseEnter={() => setActive(i)}
+                  aria-expanded={item.answer != null ? expanded : undefined}
+                  className={`flex w-full items-center justify-between rounded-(--radius-sm) px-3 py-2.5 text-left text-sm transition-colors ${
+                    i === active ? "bg-raised text-ink-high" : "text-ink-mid"
+                  }`}
+                >
+                  <span className="flex min-w-0 items-center gap-2">
+                    {item.answer != null && (
+                      <span className="shrink-0 text-ink-low" aria-hidden>
+                        {expanded ? "▾" : "?"}
+                      </span>
+                    )}
+                    <span className="truncate">{item.label}</span>
+                  </span>
+                  <span className="ml-4 shrink-0 text-xs text-ink-low">
+                    {item.hint ?? item.group}
+                  </span>
+                </button>
+                {expanded && (
+                  <div className="mb-1 ml-3 mr-2 rounded-(--radius-sm) border-l-2 border-amber/50 bg-surface/60 px-3 py-2.5">
+                    <p className="text-sm leading-relaxed text-ink-mid">{item.answer}</p>
+                    <button
+                      onClick={item.run}
+                      className="mt-2 text-xs font-medium text-amber transition-opacity hover:opacity-80"
+                    >
+                      ir até lá →
+                    </button>
+                  </div>
+                )}
+              </div>
+            );
+          })}
         </div>
         <div className="flex gap-4 border-t border-ink-faint/40 px-5 py-2.5 text-xs text-ink-low">
           <span>↑↓ navegar</span>

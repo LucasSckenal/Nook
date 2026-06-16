@@ -5,6 +5,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useNook } from "@/lib/store";
+import { usePrefersReducedMotion } from "@/components/usePrefersReducedMotion";
 import { useRoomPhase, phaseFromClock } from "@/lib/roomPhase";
 import { daysBetween, relativeDay, todayIso } from "@/lib/dates";
 import type { ModuleKey } from "./ModuleOverlay";
@@ -136,6 +137,9 @@ export function RoomSceneObjects({
   // quarto vivo: vídeo de fundo por fase (dia/noite) + transições
   const calmMotion = useNook((s) => s.calmMotion);
   const rainVisual = useNook((s) => s.rainVisual);
+  // quem pede menos movimento no SO recebe o quarto parado (still), sem vídeo
+  const prefersReduced = usePrefersReducedMotion();
+  const stillRoom = !rainVisual || calmMotion || edit || prefersReduced;
   const phase = useRoomPhase((s) => s.phase);
   const transition = useRoomPhase((s) => s.transition);
   const clearTransition = useRoomPhase((s) => s.clearTransition);
@@ -269,8 +273,8 @@ export function RoomSceneObjects({
         <div className="h-full w-full" style={camStyle}>
           <div className="relative h-full w-full" ref={stageRef}>
             {/* quarto vivo: vídeo em loop da fase (com chuva). Sem chuva,
-                movimento calmo ou edição → still da fase (dia/noite). */}
-            {!rainVisual || calmMotion || edit ? (
+                movimento calmo, edição ou "menos movimento" no SO → still. */}
+            {stillRoom ? (
               <img
                 src={STILL[phase]}
                 alt="Quarto de estudos do Nook"

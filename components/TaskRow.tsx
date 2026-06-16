@@ -92,7 +92,7 @@ export function TaskRow({ task, onDetail }: { task: Task; onDetail?: () => void 
 
       {sub && (
         <Link
-          href={`/disciplinas/${sub.id}`}
+          href={`/?open=disciplinas&id=${sub.id}`}
           className="hidden shrink-0 rounded-full px-2 py-0.5 text-xs sm:inline"
           style={{ background: `${sub.color}22`, color: sub.color }}
         >

@@ -240,7 +240,7 @@ export default function CalendarioPage() {
 
       {/* a folha do calendário */}
       <div className="nk-reveal nk-reveal-1 overflow-hidden rounded-(--radius-lg) bg-surface shadow-[0_0_0_1px_#ffffff08]">
-        <div className="grid grid-cols-7 border-b border-ink-faint/30">
+        <div className="grid grid-cols-7 border-b border-ink-faint/50">
           {DIAS.map((d) => (
             <p key={d} className="py-2.5 text-center text-[11px] uppercase tracking-wider text-ink-low">
               {d}
@@ -276,7 +276,7 @@ export default function CalendarioPage() {
                 key={date}
                 onClick={() => setSelected(isSelected ? null : date)}
                 aria-label={labelParts.join(", ")}
-                className={`relative flex min-h-[84px] flex-col items-stretch gap-1 border-ink-faint/15 p-1.5 text-left transition-colors sm:min-h-[92px] ${
+                className={`relative flex min-h-[84px] flex-col items-stretch gap-1 border-ink-faint/40 p-1.5 text-left transition-colors sm:min-h-[92px] ${
                   i % 7 !== 0 ? "border-l" : ""
                 } ${i >= 7 ? "border-t" : ""} ${
                   isSelected ? "bg-amber/10" : inMonth ? "hover:bg-raised/50" : "bg-void/30 hover:bg-raised/30"

@@ -18,8 +18,8 @@ const NIELSEN: Item[] = [
   {
     n: "N1",
     title: "Visibilidade do status do sistema",
-    how: "O estado vira cena: post-it de prazo no monitor, LED verde quando o rádio toca, vapor na caneca após estudar, agulha do dial na estação, toasts confirmando cada ação.",
-    gap: "Não há indicador de persistência (dados locais) — um “salvo ✓” discreto resolveria.",
+    how: "O estado vira cena: post-it de prazo no monitor, LED verde quando o rádio toca, vapor na caneca após estudar, agulha do dial na estação, toasts confirmando cada ação; e um indicador discreto salvando… / salvo ☁️ confirma a persistência quando há conta.",
+    gap: "O indicador “salvo ☁️” só aparece com conta; no modo visitante a gravação é local e instantânea (confirmada pelos toasts), mas sem um “salvo” explícito na tela.",
   },
   {
     n: "N2",
@@ -34,8 +34,7 @@ const NIELSEN: Item[] = [
   {
     n: "N4",
     title: "Consistência e padrões",
-    how: "Design system Lanterna (tokens de cor/raio/tipografia); Ctrl+K segue o padrão de palettes; “← quarto” e Esc funcionam igual em todo módulo; toggles e knobs respondem igual.",
-    gap: "Microtextos variam entre minúsculas e capitalizadas em alguns cantos.",
+    how: "Design system Lanterna (tokens de cor/raio/tipografia); microtextos seguem uma convenção fixa — títulos capitalizados, ações em minúsculas; Ctrl+K segue o padrão de palettes; “← quarto” e Esc funcionam igual em todo módulo; toggles e knobs respondem igual.",
   },
   {
     n: "N5",
@@ -65,8 +64,7 @@ const NIELSEN: Item[] = [
   {
     n: "N10",
     title: "Ajuda e documentação",
-    how: "Onboarding diegético (o quarto se apresenta), dicas contextuais nos rodapés de cada módulo, esta seção /processo documentando as decisões.",
-    gap: "Falta uma central de ajuda pesquisável para dúvidas pontuais.",
+    how: "Onboarding diegético (o quarto se apresenta), folha de atalhos sempre à mão (tecla “?”) e uma central de ajuda pesquisável dentro do Ctrl+K — dúvidas de “como faço X” aparecem com a resposta e um atalho para o lugar certo; dicas contextuais nos rodapés de cada módulo; esta seção /processo documenta as decisões.",
   },
 ];
 
@@ -89,7 +87,7 @@ const BASTIEN: Item[] = [
   {
     n: "B4",
     title: "Adaptabilidade (flexibilidade e experiência do usuário)",
-    how: "4 temas de quarto, sons da interface e “movimento calmo” opcionais; novatos navegam pelo cenário, experientes voam por atalhos; molduras ficam visíveis no toque (mobile).",
+    how: "4 temas de quarto, sons da interface e “movimento calmo” opcionais; respeita o prefers-reduced-motion do sistema (o quarto para de animar e o vídeo vira still sozinho); novatos navegam pelo cenário, experientes voam por atalhos; molduras ficam visíveis no toque (mobile).",
   },
   {
     n: "B5",

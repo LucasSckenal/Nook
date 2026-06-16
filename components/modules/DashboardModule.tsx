@@ -22,7 +22,7 @@ import { useNook } from "@/lib/store";
 
 export default function DashboardPage() {
   const mounted = useMounted();
-  const [tab, setTab] = useState<"visao" | "estuda">("visao");
+  const [tab, setTab] = useState<"hoje" | "visao" | "estuda">("hoje");
   const userName = useNook((s) => s.userName);
 
   if (!mounted)
@@ -82,6 +82,14 @@ export default function DashboardPage() {
             <kbd className="rounded bg-surface px-1.5 py-0.5 text-[10px]">Ctrl K</kbd>
           </button>
           <div className="flex gap-1 rounded-(--radius-md) bg-void/45 p-1 shadow-[0_0_0_1px_#ffffff14]">
+            <button
+              onClick={() => setTab("hoje")}
+              className={`rounded-(--radius-sm) px-3 py-1 text-sm transition-colors ${
+                tab === "hoje" ? "bg-raised text-ink-high" : "text-ink-mid hover:text-ink-high"
+              }`}
+            >
+              📋 <span className="hidden sm:inline">Hoje</span>
+            </button>
             <button
               onClick={() => setTab("visao")}
               className={`rounded-(--radius-sm) px-3 py-1 text-sm transition-colors ${
@@ -160,7 +168,7 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {tab === "visao" ? <Overview /> : <EstudaChat />}
+      {tab === "hoje" ? <Hoje /> : tab === "visao" ? <Overview /> : <EstudaChat />}
       </div>
     </div>
   );
@@ -208,17 +216,154 @@ function Win({
   );
 }
 
+/** uma seção da agenda do dia */
+function DaySection({
+  title,
+  icon,
+  children,
+}: {
+  title: string;
+  icon: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <section className="nk-card p-5">
+      <h3 className="mb-3 flex items-center gap-2 text-sm font-medium text-ink-high">
+        <span aria-hidden>{icon}</span> {title}
+      </h3>
+      {children}
+    </section>
+  );
+}
+
+/** Hoje — a agenda do dia num lugar só: aulas, provas/entregas e tarefas. */
+function Hoje() {
+  const subjects = useNook((s) => s.subjects);
+  const tasks = useNook((s) => s.tasks);
+  const today = todayIso();
+  const weekday = new Date().getDay();
+
+  const classes = subjects
+    .flatMap((s) => s.schedule.filter((c) => c.weekday === weekday).map((c) => ({ s, c })))
+    .sort((a, b) => a.c.start.localeCompare(b.c.start));
+
+  const exams = subjects.flatMap((s) =>
+    s.assessments.filter((a) => a.grade == null && a.date === today).map((a) => ({ s, a }))
+  );
+
+  const dueTasks = tasks
+    .filter((t) => !t.done && t.due && t.due <= today)
+    .sort((a, b) => (a.due! < b.due! ? -1 : 1));
+
+  const nothing = classes.length === 0 && exams.length === 0 && dueTasks.length === 0;
+
+  return (
+    <div className="mx-auto max-w-[680px]">
+      <div className="mb-5 flex items-baseline justify-between">
+        <h2 className="font-display text-2xl capitalize text-ink-high">
+          {new Date().toLocaleDateString("pt-BR", { weekday: "long" })}
+        </h2>
+        <span className="text-sm text-ink-low">
+          {new Date().toLocaleDateString("pt-BR", { day: "numeric", month: "long" })}
+        </span>
+      </div>
+
+      {nothing ? (
+        <div className="nk-card p-10 text-center">
+          <p className="mb-2 text-3xl" aria-hidden>
+            🌿
+          </p>
+          <p className="text-sm text-ink-mid">Dia leve — sem aulas, provas ou prazos hoje.</p>
+          <Link
+            href="/?open=foco"
+            className="mt-5 inline-block rounded-(--radius-md) bg-amber px-5 py-2.5 text-sm font-medium text-void transition-transform hover:scale-[1.02]"
+          >
+            adiantar algo da semana? entrar em foco
+          </Link>
+        </div>
+      ) : (
+        <div className="space-y-4">
+          {classes.length > 0 && (
+            <DaySection title="Aulas" icon="🎓">
+              <div className="space-y-1">
+                {classes.map(({ s, c }, i) => (
+                  <Link
+                    key={i}
+                    href={`/?open=disciplinas&id=${s.id}`}
+                    className="flex items-center gap-3 rounded-(--radius-sm) px-2 py-2 text-sm transition-colors hover:bg-raised/60"
+                  >
+                    <span className="w-20 shrink-0 tabular-nums text-ink-mid">
+                      {c.start}–{c.end}
+                    </span>
+                    <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ background: s.color }} />
+                    <span className="min-w-0 flex-1 truncate text-ink-high">{s.name}</span>
+                    {s.room && <span className="shrink-0 text-xs text-ink-low">{s.room}</span>}
+                  </Link>
+                ))}
+              </div>
+            </DaySection>
+          )}
+
+          {exams.length > 0 && (
+            <DaySection title="Provas & entregas de hoje" icon="📌">
+              <div className="space-y-1">
+                {exams.map(({ s, a }) => (
+                  <Link
+                    key={a.id}
+                    href={`/?open=disciplinas&id=${s.id}`}
+                    className="flex items-center gap-2.5 rounded-(--radius-sm) px-2 py-2 text-sm transition-colors hover:bg-raised/60"
+                  >
+                    <span style={{ color: s.color }}>{a.kind === "prova" ? "◉" : "◍"}</span>
+                    <span className="min-w-0 flex-1 truncate text-ink-high">{a.title}</span>
+                    <span className="shrink-0 text-xs" style={{ color: s.color }}>
+                      {s.name}
+                    </span>
+                    <span className="shrink-0 rounded-full bg-clay/15 px-2 py-0.5 text-[10px] font-medium text-clay">
+                      hoje
+                    </span>
+                  </Link>
+                ))}
+              </div>
+            </DaySection>
+          )}
+
+          <DaySection title="Tarefas para hoje" icon="✓">
+            {dueTasks.length === 0 ? (
+              <p className="px-2 py-3 text-sm text-ink-low">Nenhuma tarefa com prazo para hoje. 🌙</p>
+            ) : (
+              <div className="space-y-0.5">
+                {dueTasks.map((t) => (
+                  <TaskRow key={t.id} task={t} />
+                ))}
+              </div>
+            )}
+          </DaySection>
+
+          <div className="flex items-center justify-between gap-3 px-1">
+            <Link
+              href="/?open=calendario"
+              className="text-xs text-ink-low transition-colors hover:text-amber"
+            >
+              ver a semana no calendário →
+            </Link>
+            <Link
+              href="/?open=foco"
+              className="rounded-(--radius-md) bg-amber px-5 py-2.5 text-sm font-medium text-void transition-transform hover:scale-[1.02]"
+            >
+              entrar em foco
+            </Link>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function Overview() {
   const subjects = useNook((s) => s.subjects);
   const tasks = useNook((s) => s.tasks);
   const sessions = useNook((s) => s.sessions);
   const today = todayIso();
-
-  const todayTasks = tasks.filter((t) => !t.done && t.due && t.due <= today);
-  const weekday = new Date().getDay();
-  const todayClasses = subjects
-    .flatMap((s) => s.schedule.filter((c) => c.weekday === weekday).map((c) => ({ s, c })))
-    .sort((a, b) => a.c.start.localeCompare(b.c.start));
 
   const upcoming = useMemo(
     () =>
@@ -260,50 +405,8 @@ function Overview() {
 
   return (
     <div className="grid grid-cols-1 items-start gap-5 lg:grid-cols-3">
-      {/* Hoje */}
-      <Win title="Hoje" icon="📋" className="lg:col-span-2" bodyClass="p-6">
-        <p className="mb-4 text-xs text-ink-low">
-          {new Date().toLocaleDateString("pt-BR", { weekday: "long", day: "numeric", month: "long" })}
-        </p>
-        {todayClasses.length > 0 && (
-          <div className="mb-4 space-y-1.5">
-            {todayClasses.map(({ s, c }, i) => (
-              <Link
-                key={i}
-                href={`/disciplinas/${s.id}`}
-                className="flex items-center gap-3 rounded-(--radius-sm) px-2 py-1.5 text-sm transition-colors hover:bg-raised/60"
-              >
-                <span className="h-2.5 w-2.5 rounded-full" style={{ background: s.color }} />
-                <span className="text-ink-mid">
-                  {c.start}–{c.end}
-                </span>
-                <span className="text-ink-high">{s.name}</span>
-                <span className="text-xs text-ink-low">{s.room}</span>
-              </Link>
-            ))}
-          </div>
-        )}
-        {todayTasks.length === 0 ? (
-          <p className="rounded-(--radius-md) bg-raised/40 px-4 py-6 text-center text-sm text-ink-mid">
-            Nada com prazo para hoje. Respira — ou adianta algo da semana. ☕
-          </p>
-        ) : (
-          <div className="space-y-0.5">
-            {todayTasks.map((t) => (
-              <TaskRow key={t.id} task={t} />
-            ))}
-          </div>
-        )}
-        <Link
-          href="/tarefas"
-          className="mt-4 inline-block text-xs text-ink-low transition-colors hover:text-amber"
-        >
-          ver todas as tarefas →
-        </Link>
-      </Win>
-
       {/* Sugestão da Estuda */}
-      <Win title="A Estuda reparou" icon="🪻" reveal="nk-reveal-1" bodyClass="p-6">
+      <Win title="A Estuda reparou" icon="🪻" className="lg:col-span-2" reveal="nk-reveal-1" bodyClass="p-6">
         <div className="space-y-2 text-sm leading-relaxed text-ink-mid">
           {(suggestion.artifact?.items ?? [suggestion.text]).slice(0, 2).map((t, i) => (
             <p key={i}>{t.replace(/\*\*/g, "")}</p>
@@ -318,7 +421,7 @@ function Overview() {
           {upcoming.map(({ s, a }) => (
             <Link
               key={a.id}
-              href={`/disciplinas/${s.id}`}
+              href={`/?open=disciplinas&id=${s.id}`}
               className="flex items-center justify-between gap-3 rounded-(--radius-sm) px-2 py-1.5 transition-colors hover:bg-raised/60"
             >
               <div className="min-w-0">
@@ -390,8 +493,8 @@ function Overview() {
             {tasks.filter((t) => t.done).length} tarefas concluídas no total ·{" "}
             {tasks.filter((t) => !t.done).length} em aberto
           </p>
-          <Link href="/estatisticas" className="inline-block text-xs text-ink-low transition-colors hover:text-amber">
-            ver estatísticas completas →
+          <Link href="/?open=estatisticas" className="inline-block text-xs text-ink-low transition-colors hover:text-amber">
+            ver o diário completo →
           </Link>
         </div>
       </Win>
